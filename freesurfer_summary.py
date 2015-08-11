@@ -27,20 +27,20 @@ def main(subject_loc = '/Users/kcho/T1', locations=['/Users/kcho/T1','/Users/kch
     ##########################################################
     # annotation2label --> merge labels --> freesurfer/tmp
     ##########################################################
-    makeLabel(freesurfer_dir)
-    mergeLabel(freesurfer_dir,roiDict)
+    if not os.path.isfile(os.path.join(freesurfer_dir,'tmp','thick_kev.csv')):
+        makeLabel(freesurfer_dir)
+        mergeLabel(freesurfer_dir,roiDict)
 
-    ##########################################################
-    # thicknessDict[side_cortex] = (thickness, std) in mm
-    ##########################################################
-    thicknessDict = getThickness(freesurfer_dir,roiDict)
-    thicknessDf = dictWithTuple2df(thicknessDict)
-    print thicknessDf
-
+        ##########################################################
+        # thicknessDict[side_cortex] = (thickness, std) in mm
+        ##########################################################
+        thicknessDict = getThickness(freesurfer_dir,roiDict)
+        thicknessDf = dictWithTuple2df(thicknessDict)
+        print thicknessDf
+        thicknessDf.to_csv(os.path.join(freesurfer_dir,'tmp','thick_kev.csv'))
+    else:
+        thicknessDf = pd.read_csv(os.path.join(freesurfer_dir,'tmp','thick_kev.csv'))
     draw_thickness(thicknessDf)
-
-
-
 
 
     volumeDf = openStatsTable(freesurfer_dir)
