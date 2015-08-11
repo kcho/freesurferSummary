@@ -101,6 +101,11 @@ def getThickness(freesurfer_dir,roiDict):
             thickness = tuple([float(x) for x in thickness])
             thicknessDict[side+'_'+cortex] = thickness
             print thickness
+            os.remove('{loc}/{side}_{cortex}'.format(
+                loc=os.path.join(freesurfer_dir,'tmp'),
+                side=side,
+                cortex=cortex
+            ))
     return thicknessDict
 
 
