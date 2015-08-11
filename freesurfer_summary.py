@@ -5,7 +5,8 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 
-
+import matplotlib
+matplotlib.use('GTK')
 
 
 def main(subject_loc = '/Users/kcho/T1', locations=['/Users/kcho/T1','/Users/kcho/T1'], roi_list = ['ctx_lh_G_cuneus']):
