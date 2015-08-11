@@ -4,15 +4,59 @@ import re
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
-import numpy as np
+
+
+
 
 def main(subject_loc = '/Users/kcho/T1', locations=['/Users/kcho/T1','/Users/kcho/T1'], roi_list = ['ctx_lh_G_cuneus']):
-    freesurfer_dir = get_freesurfer_loc(subject_loc)
-    print freesurfer_dir
-
-
+    ##########################################################
+    # Freesurfer setting
+    ##########################################################
     os.environ["FREESURFER_HOME"] = '/Applications/freesurfer'
+    # where is the freesurfer directory
     os.environ["SUBJECTS_DIR"] = '{0}'.format(subject_loc)
+
+    freesurfer_dir = get_freesurfer_loc(subject_loc)
+
+    ##########################################################
+    # Get roi dict : 8 cortex each hemisphere
+    ##########################################################
+    roiDict = get_cortical_rois()
+
+    ##########################################################
+    # annotation2label --> merge labels --> freesurfer/tmp
+    ##########################################################
+    makeLabel(freesurfer_dir)
+    mergeLabel(freesurfer_dir,roiDict)
+
+    ##########################################################
+    # thicknessDict[side_cortex] = (thickness, std) in mm
+    ##########################################################
+    thicknessDict = getThickness(freesurfer_dir,roiDict)
+    thicknessDf = dictWithTuple2df(thicknessDict)
+    print thicknessDf
+
+    draw_thickness(thicknessDf)
+
+
+
+
+
+    volumeDf = openStatsTable(freesurfer_dir)
+    volumeDf['name'] = volumeDf.side + '_' + volumeDf.ROI
+
+    volumeDf = getSummary(volumeDf,roiDict)
+    print volumeDf
+
+
+    # graph
+    draw_graph(volumeDf)
+
+    # # collect stats
+    # if len(locations) > 1:
+    #     meanDf = collectStats(locations)
+
+
 
     #freesurfer_table = openTable('/Applications/freesurfer/FreeSurferColorLUT.txt')
     #print freesurfer_table
@@ -20,19 +64,65 @@ def main(subject_loc = '/Users/kcho/T1', locations=['/Users/kcho/T1','/Users/kch
     #for roi in roi_list:
     #    print freesurfer_table[roi]
 
-    volumeDf = openStatsTable(freesurfer_dir)
-    volumeDf['name'] = volumeDf.side + '_' + volumeDf.ROI
 
-    volumeDf = getSummary(volumeDf)
-    print volumeDf
+def draw_thickness(thicknessDf):
+    gb = thicknessDf.groupby('side')
+    label = thicknessDf.subroi.str[3:].unique()
+    plt.plot(gb.get_group('lh')['thickness'],'r')
+    plt.plot(gb.get_group('rh')['thickness'],'b')
+    plt.xticks(range(len(label)), label)
+    plt.show()
+
+def dictWithTuple2df(thicknessDict):
+    df = pd.DataFrame.from_dict(thicknessDict)
+    df = df.stack().reset_index()
+    df = df[df.level_0==0].merge(df[df.level_0==1], on='level_1', how='inner')
+    df.columns = ['__','subroi','thickness','_','std']
+    df['side'] = df['subroi'].str[:2]
+
+    return df[['subroi','thickness','side','std']]
 
 
-    # graph
-    draw_graph(volumeDf)
 
-    # collect stats
-    if len(locations) > 1:
-        meanDf = collectStats(locations)
+
+def getThickness(freesurfer_dir,roiDict):
+    thicknessDict={}
+    for side in ['lh','rh']:
+        for cortex, rois in roiDict.iteritems():
+            command = 'mris_anatomical_stats \
+            -l {loc}/{side}_{cortex} FREESURFER {side} 2>/dev/null'.format(
+                loc=os.path.join(freesurfer_dir,'tmp'),
+                side=side,
+                cortex=cortex
+            )
+            output=os.popen(re.sub('\s+',' ',command)).read()
+            thickness = re.search('thickness\s+=\s+(\S+)\s+mm\s+\S+\s+(\S+)', output).group(1,2)
+            thickness = tuple([float(x) for x in thickness])
+            thicknessDict[side+'_'+cortex] = thickness
+            print thickness
+    return thicknessDict
+
+
+def mergeLabel(freesurfer_dir, roiDict):
+    for side in ['lh','rh']:
+        for cortex, rois in roiDict.iteritems():
+            command = 'mri_mergelabels {inLabel} -o {outLabel} 2>/dev/null'.format(
+                inLabel = ' '.join(['-i '+os.path.join(freesurfer_dir,'tmp',side+'.'+x+'.label') for x in rois]),
+                outLabel = os.path.join(freesurfer_dir,'tmp',side+'_'+cortex))
+            os.popen(command).read()
+
+            for roi in [os.path.join(freesurfer_dir,'tmp',side+'.'+x+'.label') for x in rois]:
+                os.remove(roi)
+
+
+def makeLabel(freesurfer_dir):
+    for side in ['lh','rh']:
+        command = 'mri_annotation2label \
+            --subject {basename} \
+            --hemi {side} --outdir {outDir} 2>/dev/null'.format(basename=os.path.basename(freesurfer_dir),
+                                                    side=side,
+                                                    outDir=os.path.join(freesurfer_dir,'tmp'))
+        os.popen(re.sub('\s+',' ',command)).read()
 
 
 def collectStats(locations):
@@ -62,6 +152,7 @@ def draw_graph(volumeDf):
         else:
             rh_volume_sums[side+'_'+cortex] = grp['Volume'].sum()
 
+    print rh_volume_sums
     plt.plot(lh_volume_sums.values(),'r')
     plt.plot(rh_volume_sums.values(),'b')
     plt.xticks(range(len(cortexList)), cortexList)
@@ -71,17 +162,10 @@ def draw_graph(volumeDf):
     # plt.xticks(range(len(gb.get_group('lh')['ROI'])),gb.get_group('lh')['ROI'])
     # plt.show()
 
-def getSummary(volumeDf):
+def getSummary(volumeDf,roiDict):
     # thalamus : lh, 10, rh, 49
     # lh_OFC : 1019 1014 1012
-    roiDict = {'OFC' : ['parsorbitalis', 'medialorbitofrontal', 'lateralorbitofrontal'],
-               'MPFC' : ['caudalanteriorcingulate', 'rostralanteriorcingulate', 'superiorfrontal'],
-               'LPFC' : [ 'parstriangularis', 'rostralmiddlefrontal', 'frontalpole', 'parsopercularis'],
-               'SMC' : [ 'precentral', 'caudalmiddlefrontal', 'postcentral', 'paracentral'],
-               'PC' : ['inferiorparietal', 'supramarginal', 'precuneus', 'posteriorcingulate', 'isthmuscingulate', 'superiorparietal'],
-               'MTC' : ['entorhinal', 'parahippocampal', 'fusiform'],
-               'LTC' : ['transversetemporal', 'superiortemporal', 'bankssts', 'inferiortemporal', 'middletemporal', 'temporalpole'],
-               'OCC' : ['pericalcarine', 'lingual', 'lateraloccipital', 'cuneus']}
+
 
     columnMake = pd.DataFrame.from_dict(roiDict,orient='index').T.stack().reset_index()
     columnMake.columns = ['order','cortex','subroi']
@@ -122,6 +206,9 @@ def openStatsTable(freesurfer_dir):
 
 
 def openTable(f_file):
+
+
+
     with open(f_file,'r') as f:
         lines = f.readlines()
     lines_edited = [re.search('^(\d+)\s+(\S+)',x).group(2,1) for x in lines if re.search('^\d',x)]
@@ -182,6 +269,16 @@ def roi_extraction(subjectDir, roiName, roiNumber=False, outputDir=False):
     print output
 
 
+def get_cortical_rois():
+    roiDict = {'OFC' : ['parsorbitalis', 'medialorbitofrontal', 'lateralorbitofrontal'],
+           'MPFC' : ['caudalanteriorcingulate', 'rostralanteriorcingulate', 'superiorfrontal'],
+           'LPFC' : [ 'parstriangularis', 'rostralmiddlefrontal', 'frontalpole', 'parsopercularis'],
+           'SMC' : [ 'precentral', 'caudalmiddlefrontal', 'postcentral', 'paracentral'],
+           'PC' : ['inferiorparietal', 'supramarginal', 'precuneus', 'posteriorcingulate', 'isthmuscingulate', 'superiorparietal'],
+           'MTC' : ['entorhinal', 'parahippocampal', 'fusiform'],
+           'LTC' : ['transversetemporal', 'superiortemporal', 'bankssts', 'inferiortemporal', 'middletemporal', 'temporalpole'],
+           'OCC' : ['pericalcarine', 'lingual', 'lateraloccipital', 'cuneus']}
+    return roiDict
 
 if __name__ == '__main__':
     main()
