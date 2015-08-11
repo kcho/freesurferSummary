@@ -36,22 +36,22 @@ def main(subject_loc = '/Users/kcho/T1', locations=['/Users/kcho/T1','/Users/kch
         ##########################################################
         thicknessDict = getThickness(freesurfer_dir,roiDict)
         thicknessDf = dictWithTuple2df(thicknessDict)
-        print thicknessDf
+        #print thicknessDf
         thicknessDf.to_csv(os.path.join(freesurfer_dir,'tmp','thick_kev.csv'))
     else:
         thicknessDf = pd.read_csv(os.path.join(freesurfer_dir,'tmp','thick_kev.csv'))
-    draw_thickness(thicknessDf)
+    draw_thickness(thicknessDf,os.path.basename(subject_loc))
 
 
     volumeDf = openStatsTable(freesurfer_dir)
     volumeDf['name'] = volumeDf.side + '_' + volumeDf.ROI
 
     volumeDf = getSummary(volumeDf,roiDict)
-    print volumeDf
+    #print volumeDf
 
 
     # graph
-    draw_graph(volumeDf)
+    #draw_graph(volumeDf)
 
     # # collect stats
     # if len(locations) > 1:
@@ -66,13 +66,45 @@ def main(subject_loc = '/Users/kcho/T1', locations=['/Users/kcho/T1','/Users/kch
     #    print freesurfer_table[roi]
 
 
-def draw_thickness(thicknessDf):
+def draw_thickness(thicknessDf,subjName):
+    thicknessDf['roi'] = thicknessDf.subroi.str[3:]
+    gb = thicknessDf.groupby('roi')
+    thicknessDf = pd.concat([gb.get_group('LPFC'),
+                        gb.get_group('OFC'),
+                        gb.get_group('MPFC'),
+                        gb.get_group('LTC'),
+                        gb.get_group('MTC'),
+                        gb.get_group('SMC'),
+                        gb.get_group('PC'),
+                        gb.get_group('OCC')])
+
     gb = thicknessDf.groupby('side')
     label = thicknessDf.subroi.str[3:].unique()
-    plt.plot(gb.get_group('lh')['thickness'],'r')
-    plt.plot(gb.get_group('rh')['thickness'],'b')
-    plt.xticks(range(len(label)), label)
+
+    fig = plt.figure(figsize=(10,5))
+    fig.suptitle("Cortical thickness in eight regions", fontsize=20)
+    #plt.ylabel('Cortical thickness', fontsize=16)
+    #plt.xticks(range(len(label)), label)
+
+    lh_g = plt.subplot2grid((2,2),(0, 0), rowspan=2)
+    rh_g = plt.subplot2grid((2,2),(0, 1), rowspan=2)
+    #ax1 = fig.add_subplot(211)
+    #ax2 = fig.add_subplot(212)
+    lh_g.plot(gb.get_group('lh')['thickness'],'r',label=subjName)
+    lh_g.set_xticklabels(label)
+    lh_g.set_xlabel('Left', fontsize=16)
+    lh_g.set_ylabel('Cortical thickness in mm', fontsize=16)
+    lh_g.set_ylim(1.8, 3.2)
+    lh_g.legend()
+
+    rh_g.plot(gb.get_group('rh')['thickness'],'b',label=subjName)
+    rh_g.set_xticklabels(label)
+    rh_g.set_xlabel('Right', fontsize=16)
+    rh_g.set_ylim(1.8, 3.2)
+    rh_g.legend()
+
     plt.show()
+
 
 def dictWithTuple2df(thicknessDict):
     df = pd.DataFrame.from_dict(thicknessDict)
