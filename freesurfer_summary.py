@@ -1,9 +1,12 @@
+#!/ccnc_bin/venv/bin/python
 __author__ = 'kcho'
 
 import re
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
+import argparse
+import textwrap
 
 import matplotlib
 matplotlib.use('GTK')
@@ -319,7 +322,37 @@ def get_cortical_rois():
     return roiDict
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=textwrap.dedent('''\
+            {codeName} : 
+            ========================================
+            eg) {codeName} --input {in_put} --output {output}
+            '''.format(codeName=os.path.basename(__file__),
+                       in_put = 'subjectLoc',
+                       output = 'outLoc')))
+
+    parser.add_argument(
+        '-i', '--inputDir',
+        help='Subject location',
+        default=os.getcwd())
+
+    parser.add_argument(
+        '-o', '--output',
+        help='Output',
+        default=os.getcwd())
+
+    parser.add_argument(
+        '-l', '--locations',
+        help='subject inputs in python list format',
+        default=[x for x in os.listdir(os.getcwd()) if os.path.isdir(x)])
 
 
+    parser.add_argument(
+        '-r', '--rois',
+        help='roi inputs in python list format',
+        default="ctx_lh_G_cuneus")
 
+    args = parser.parse_args()
+
+    main(args.inputDir, args.locations, args.rois)
