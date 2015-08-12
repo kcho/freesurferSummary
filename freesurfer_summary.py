@@ -13,6 +13,18 @@ import textwrap
 
 
 def main(subject_loc = '/Users/kcho/T1', locations=['/Users/kcho/T1','/Users/kcho/T1'], roi_list = ['ctx_lh_G_cuneus']):
+
+    locations = locations.split(' ')
+
+    ## collect stats
+    if args.mean != None:
+        meanDf = pd.read_csv(args.mean)
+    else:
+        if len(locations) > 1:
+            meanDf = collectStats(locations)
+        else:
+            pass
+
     ##########################################################
     # Freesurfer setting
     ##########################################################
@@ -44,8 +56,14 @@ def main(subject_loc = '/Users/kcho/T1', locations=['/Users/kcho/T1','/Users/kch
     else:
         thicknessDf = pd.read_csv(os.path.join(freesurfer_dir,'tmp','thick_kev.csv'))
 
+    
+    try:
+        meanDf
+    except:
+        meanDf = thicknessDf
+
     if args.graph:
-        draw_thickness(thicknessDf,os.path.basename(subject_loc))
+        draw_thickness(thicknessDf,meanDf,os.path.basename(subject_loc))
 
 
     volumeDf = openStatsTable(freesurfer_dir)
@@ -58,9 +76,6 @@ def main(subject_loc = '/Users/kcho/T1', locations=['/Users/kcho/T1','/Users/kch
     # graph
     #draw_graph(volumeDf)
 
-    # # collect stats
-    # if len(locations) > 1:
-    #     meanDf = collectStats(locations)
 
 
 
@@ -71,9 +86,14 @@ def main(subject_loc = '/Users/kcho/T1', locations=['/Users/kcho/T1','/Users/kch
     #    print freesurfer_table[roi]
 
 
-def draw_thickness(thicknessDf,subjName):
+def draw_thickness(thicknessDf,meanDf, subjName):
     thicknessDf['roi'] = thicknessDf.subroi.str[3:]
+    meanDf['roi'] = meanDf.subroi.str[3:]
+    meanDf['side'] = meanDf.subroi.str[:2]
+
     gb = thicknessDf.groupby('roi')
+
+
     thicknessDf = pd.concat([gb.get_group('LPFC'),
                         gb.get_group('OFC'),
                         gb.get_group('MPFC'),
@@ -82,6 +102,17 @@ def draw_thickness(thicknessDf,subjName):
                         gb.get_group('SMC'),
                         gb.get_group('PC'),
                         gb.get_group('OCC')])
+
+
+    gbmean = meanDf.groupby('roi')
+    meanDf = pd.concat([gbmean.get_group('LPFC'),
+                        gbmean.get_group('OFC'),
+                        gbmean.get_group('MPFC'),
+                        gbmean.get_group('LTC'),
+                        gbmean.get_group('MTC'),
+                        gbmean.get_group('SMC'),
+                        gbmean.get_group('PC'),
+                        gbmean.get_group('OCC')])
 
     gb = thicknessDf.groupby('side')
     label = thicknessDf.subroi.str[3:].unique()
@@ -96,6 +127,7 @@ def draw_thickness(thicknessDf,subjName):
     #ax1 = fig.add_subplot(211)
     #ax2 = fig.add_subplot(212)
     lh_g.plot(gb.get_group('lh')['thickness'],'r',label=subjName)
+    lh_g.plot(meanDf.groupby('side').get_group('lh')['thickness'],'r--',label='mean')
     lh_g.set_xticklabels(label)
     lh_g.set_xlabel('Left', fontsize=16)
     lh_g.set_ylabel('Cortical thickness in mm', fontsize=16)
@@ -103,6 +135,7 @@ def draw_thickness(thicknessDf,subjName):
     lh_g.legend()
 
     rh_g.plot(gb.get_group('rh')['thickness'],'b',label=subjName)
+    rh_g.plot(meanDf.groupby('side').get_group('rh')['thickness'],'b--',label='mean')
     rh_g.set_xticklabels(label)
     rh_g.set_xlabel('Right', fontsize=16)
     rh_g.set_ylim(1.8, 3.2)
@@ -169,17 +202,27 @@ def makeLabel(freesurfer_dir):
 
 
 def collectStats(locations):
+    print locations
+    roiDict = get_cortical_rois()
     subjectDict = {}
     for location in locations:
-        print location
         freesurfer_dir = get_freesurfer_loc(location)
-        volumeDf = openStatsTable(freesurfer_dir)
-        volumeDf['name'] = volumeDf.side + '_' + volumeDf.ROI
-        volumeDf = getSummary(volumeDf)
-        subjectDict[location] = volumeDf
+        if not os.path.isfile(os.path.join(freesurfer_dir,'tmp','thick_kev.csv')):
+            makeLabel(freesurfer_dir)
+            mergeLabel(freesurfer_dir, roiDict)
+            thicknessDict = getThickness(freesurfer_dir, roiDict)
+            thicknessDf = dictWithTuple2df(thicknessDict)
+            #print thicknessDf
+            thicknessDf.to_csv(os.path.join(freesurfer_dir,'tmp','thick_kev.csv'))
+            
+        else:
+            thicknessDf = pd.read_csv(os.path.join(freesurfer_dir,'tmp','thick_kev.csv'))
+        subjectDict[location] = thicknessDf
 
-    print len(subjectDict.values())
-    #print pd.concat(subjectDict.values())
+
+    finalDf = pd.concat([x for x in subjectDict.values()])
+    return finalDf.groupby('subroi').mean().reset_index()
+
 
 
 def draw_graph(volumeDf):
@@ -359,6 +402,10 @@ if __name__ == '__main__':
         '-g', '--graph',
         help='Draw graph',
         action='store_true')
+
+    parser.add_argument(
+        '-m', '--mean',
+        help='meanDf')
 
     args = parser.parse_args()
 
