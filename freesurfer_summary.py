@@ -392,7 +392,8 @@ if __name__ == '__main__':
 
     parser.add_argument(
         '-l', '--locations',
-        help='subject inputs in python list format')
+        help='subject inputs in python list format',
+        default = '/ccnc_bin/meanThickness/mean_thickness.csv')
         #default=[x for x in os.listdir(os.getcwd()) if os.path.isdir(x)])
 
 
