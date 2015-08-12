@@ -4,12 +4,12 @@ __author__ = 'kcho'
 import re
 import os
 import pandas as pd
+import matplotlib
+matplotlib.use('GTK')
 import matplotlib.pyplot as plt
 import argparse
 import textwrap
 
-import matplotlib
-matplotlib.use('GTK')
 
 
 def main(subject_loc = '/Users/kcho/T1', locations=['/Users/kcho/T1','/Users/kcho/T1'], roi_list = ['ctx_lh_G_cuneus']):
@@ -337,10 +337,10 @@ if __name__ == '__main__':
         help='Subject location',
         default=os.getcwd())
 
-    parser.add_argument(
-        '-o', '--output',
-        help='Output',
-        default=os.getcwd())
+    #parser.add_argument(
+        #'-o', '--output',
+        #help='Output',
+        #default=os.getcwd())
 
     parser.add_argument(
         '-l', '--locations',
