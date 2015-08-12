@@ -14,7 +14,9 @@ import textwrap
 
 def main(subject_loc = '/Users/kcho/T1', locations=['/Users/kcho/T1','/Users/kcho/T1'], roi_list = ['ctx_lh_G_cuneus']):
 
-    locations = locations.split(' ')
+    print args.locations
+    if args.locations != None:
+        locations = locations.split(' ')
 
     ## collect stats
     if args.mean != None:
@@ -22,6 +24,7 @@ def main(subject_loc = '/Users/kcho/T1', locations=['/Users/kcho/T1','/Users/kch
     else:
         if len(locations) > 1:
             meanDf = collectStats(locations)
+            #meanDf.to_csv('mean_thickness.csv')
         else:
             pass
 
@@ -389,8 +392,8 @@ if __name__ == '__main__':
 
     parser.add_argument(
         '-l', '--locations',
-        help='subject inputs in python list format',
-        default=[x for x in os.listdir(os.getcwd()) if os.path.isdir(x)])
+        help='subject inputs in python list format')
+        #default=[x for x in os.listdir(os.getcwd()) if os.path.isdir(x)])
 
 
     parser.add_argument(
