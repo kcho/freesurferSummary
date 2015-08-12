@@ -4,8 +4,8 @@ __author__ = 'kcho'
 import re
 import os
 import pandas as pd
-import matplotlib
-matplotlib.use('GTK')
+#import matplotlib
+#matplotlib.use('GTK')
 import matplotlib.pyplot as plt
 import argparse
 import textwrap
