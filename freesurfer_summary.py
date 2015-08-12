@@ -43,7 +43,9 @@ def main(subject_loc = '/Users/kcho/T1', locations=['/Users/kcho/T1','/Users/kch
         thicknessDf.to_csv(os.path.join(freesurfer_dir,'tmp','thick_kev.csv'))
     else:
         thicknessDf = pd.read_csv(os.path.join(freesurfer_dir,'tmp','thick_kev.csv'))
-    draw_thickness(thicknessDf,os.path.basename(subject_loc))
+
+    if args.graph:
+        draw_thickness(thicknessDf,os.path.basename(subject_loc))
 
 
     volumeDf = openStatsTable(freesurfer_dir)
@@ -352,6 +354,11 @@ if __name__ == '__main__':
         '-r', '--rois',
         help='roi inputs in python list format',
         default="ctx_lh_G_cuneus")
+
+    parser.add_argument(
+        '-g', '--graph',
+        help='Draw graph',
+        action='store_true')
 
     args = parser.parse_args()
 
