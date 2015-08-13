@@ -12,20 +12,17 @@ import textwrap
 
 
 
-def main(subject_loc, locations, roi_list):
+def main(subject_loc, backgrounds, roi_list, meanDf):
 
-    if args.locations != None:
-        locations = locations.split(' ')
-
-    ## collect stats
-    if args.mean != None:
-        meanDf = pd.read_csv(args.mean)
-    else:
-        if len(locations) > 1:
-            meanDf = collectStats(locations)
+    ## if no mean table is given
+    if args.meanDf == None:
+        if len(backgrounds) > 1:
+            meanDf = collectStats(backgrounds)
             #meanDf.to_csv('mean_thickness.csv')
         else:
             pass
+    else:
+        meanDf = pd.read_csv(args.mean)
 
     ##########################################################
     # Freesurfer setting
@@ -203,12 +200,12 @@ def makeLabel(freesurfer_dir):
         os.popen(re.sub('\s+',' ',command)).read()
 
 
-def collectStats(locations):
+def collectStats(backgrounds):
     roiDict = get_cortical_rois()
 
     subjectDict = {}
-    for location in locations:
-        freesurfer_dir = get_freesurfer_loc(location)
+    for background in backgrounds:
+        freesurfer_dir = get_freesurfer_loc(background)
         if not os.path.isfile(os.path.join(freesurfer_dir,'tmp','thick_kev.csv')):
             makeLabel(freesurfer_dir)
             mergeLabel(freesurfer_dir, roiDict)
@@ -218,7 +215,7 @@ def collectStats(locations):
             
         else:
             thicknessDf = pd.read_csv(os.path.join(freesurfer_dir,'tmp','thick_kev.csv'))
-        subjectDict[location] = thicknessDf
+        subjectDict[background] = thicknessDf
 
 
     # sum up dataframes in a subjectDict dictionary
@@ -306,11 +303,11 @@ def openTable(f_file):
 
     return lines_edited_dict
 
-def get_freesurfer_loc(location):
+def get_freesurfer_loc(background):
     freesurferDIR = re.search('freesurfer',
-            ' '.join(os.listdir(location)),
+            ' '.join(os.listdir(background)),
             re.IGNORECASE).group(0)
-    return os.path.join(location, freesurferDIR)
+    return os.path.join(background, freesurferDIR)
 
 def roi_extraction(subjectDir, roiName, roiNumber=False, outputDir=False):
     '''
@@ -392,10 +389,9 @@ if __name__ == '__main__':
         #default=os.getcwd())
 
     parser.add_argument(
-        '-l', '--locations',
+        '-b', '--backgroun',
         nargs='+',
-        help='subject inputs eg)-l subj1 subj2 subj3',
-        default = '/ccnc_bin/meanThickness/mean_thickness.csv')
+        help='backround subject inputs eg)-l subj1 subj2 subj3')
         #default=[x for x in os.listdir(os.getcwd()) if os.path.isdir(x)])
 
 
@@ -410,9 +406,10 @@ if __name__ == '__main__':
         action='store_true')
 
     parser.add_argument(
-        '-m', '--mean',
+        '-m', '--meanDf',
         help='meanDf')
+        #default = '/ccnc_bin/meanThickness/mean_thickness.csv')
 
     args = parser.parse_args()
 
-    main(args.inputDir, args.locations, args.rois)
+    main(args.inputDir, args.backgrounds, args.rois, args.meanDf)
