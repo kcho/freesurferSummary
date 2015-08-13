@@ -12,9 +12,8 @@ import textwrap
 
 
 
-def main(subject_loc = '/Users/kcho/T1', locations=['/Users/kcho/T1','/Users/kcho/T1'], roi_list = ['ctx_lh_G_cuneus']):
+def main(subject_loc, locations, roi_list):
 
-    print args.locations
     if args.locations != None:
         locations = locations.split(' ')
 
@@ -205,8 +204,8 @@ def makeLabel(freesurfer_dir):
 
 
 def collectStats(locations):
-    print locations
     roiDict = get_cortical_rois()
+
     subjectDict = {}
     for location in locations:
         freesurfer_dir = get_freesurfer_loc(location)
@@ -215,7 +214,6 @@ def collectStats(locations):
             mergeLabel(freesurfer_dir, roiDict)
             thicknessDict = getThickness(freesurfer_dir, roiDict)
             thicknessDf = dictWithTuple2df(thicknessDict)
-            #print thicknessDf
             thicknessDf.to_csv(os.path.join(freesurfer_dir,'tmp','thick_kev.csv'))
             
         else:
@@ -223,7 +221,10 @@ def collectStats(locations):
         subjectDict[location] = thicknessDf
 
 
+    # sum up dataframes in a subjectDict dictionary
     finalDf = pd.concat([x for x in subjectDict.values()])
+
+    # return mean
     return finalDf.groupby('subroi').mean().reset_index()
 
 
@@ -392,7 +393,8 @@ if __name__ == '__main__':
 
     parser.add_argument(
         '-l', '--locations',
-        help='subject inputs in python list format',
+        nargs='+',
+        help='subject inputs eg)-l subj1 subj2 subj3',
         default = '/ccnc_bin/meanThickness/mean_thickness.csv')
         #default=[x for x in os.listdir(os.getcwd()) if os.path.isdir(x)])
 
