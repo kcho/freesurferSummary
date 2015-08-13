@@ -3,6 +3,7 @@ __author__ = 'kcho'
 
 import re
 import os
+import sys
 import pandas as pd
 #import matplotlib
 #matplotlib.use('GTK')
@@ -16,30 +17,50 @@ import ccncpy.ccncpy as ccncpy
 def main(subject_loc, backgrounds, roi_list, meanDfLoc):
 
     ##########################################################
+    # Find freesurfer dir
+    ##########################################################
+    FS_description= ['bem','mri','scripts',
+                     'src','stats','surf','tmp']
+    freesurfer_dir = ccncpy.subDirSearch(FS_description, 
+                                         subject_loc)
+
+    if len(freesurfer_dir) > 1:
+        print freesurfer_dir
+        sys.exit(re.sub('\s+',' ',
+        'There are more than 1 freesurfer directory \
+                under {0}'.format(subject_loc)))
+    else:
+        freesurfer_dir = ''.join(freesurfer_dir)
+
+
+    ##########################################################
     # Freesurfer setting
     ##########################################################
-    FS_description= ['bem','mri','scripts','src','stats','surf','tmp']
-    freesurfer_dir = ccncpy.subDirSearch(FS_description, subject_loc)
-
     os.environ["FREESURFER_HOME"] = '/Applications/freesurfer'
     # where is the freesurfer directory
     os.environ["SUBJECTS_DIR"] = '{0}'.format(os.path.dirname(freesurfer_dir))
 
+    ##########################################################
+    # Summarize cortical thickness
+    ##########################################################
     # if no mean table is given but background list is given
-    print meanDfLoc
-    print backgrounds
     if meanDfLoc == False and backgrounds != None:
+        print 'Calculating cortical thickness in {0}'.format(backgrounds)
         # make mean table
-        print 'ha'
+        meanDfName = raw_input('Name of the background subject : ')
         meanDf = collectStats(backgrounds)
 
     # if no mean table is given, and backround list is empty
     # use subject_loc as the background
     elif meanDfLoc == False and backgrounds == None:
+        print 'No background subjects are given, now running only {0}'.format(subject_loc)
+        meanDfName = ''
         meanDf = collectStats([subject_loc])
 
     # if meanDfLoc is given
     else:
+        print 'Now comparing with mean_thickness.csv in /ccnc_bin/meanThickness/'
+        meanDfName = 'NOR'
         meanDf = pd.read_csv('/ccnc_bin/meanThickness/mean_thickness.csv')
 
 
@@ -53,19 +74,20 @@ def main(subject_loc, backgrounds, roi_list, meanDfLoc):
     ##########################################################
     # annotation2label --> merge labels --> freesurfer/tmp
     ##########################################################
-    if not os.path.isfile(os.path.join(freesurfer_dir,'tmp','thick_kev.csv')):
-        makeLabel(freesurfer_dir)
-        mergeLabel(freesurfer_dir,roiDict)
+    thicknessDf = collectStats([os.path.dirname(freesurfer_dir)])#backgrounds)
+    #if not os.path.isfile(os.path.join(freesurfer_dir,'tmp','thick_kev.csv')):
+        #makeLabel(freesurfer_dir)
+        #mergeLabel(freesurfer_dir,roiDict)
 
-        ##########################################################
-        # thicknessDict[side_cortex] = (thickness, std) in mm
-        ##########################################################
-        thicknessDict = getThickness(freesurfer_dir,roiDict)
-        thicknessDf = dictWithTuple2df(thicknessDict)
-        #print thicknessDf
-        thicknessDf.to_csv(os.path.join(freesurfer_dir,'tmp','thick_kev.csv'))
-    else:
-        thicknessDf = pd.read_csv(os.path.join(freesurfer_dir,'tmp','thick_kev.csv'))
+        ###########################################################
+        ## thicknessDict[side_cortex] = (thickness, std) in mm
+        ###########################################################
+        #thicknessDict = getThickness(freesurfer_dir,roiDict)
+        #thicknessDf = dictWithTuple2df(thicknessDict)
+        ##print thicknessDf
+        #thicknessDf.to_csv(os.path.join(freesurfer_dir,'tmp','thick_kev.csv'))
+    #else:
+        #thicknessDf = pd.read_csv(os.path.join(freesurfer_dir,'tmp','thick_kev.csv'))
 
     
     try:
@@ -74,7 +96,7 @@ def main(subject_loc, backgrounds, roi_list, meanDfLoc):
         meanDf = thicknessDf
 
     if args.graph:
-        draw_thickness(thicknessDf,meanDf,os.path.basename(subject_loc))
+        draw_thickness(thicknessDf,meanDf,os.path.basename(subject_loc), meanDfName)
 
 
     volumeDf = openStatsTable(freesurfer_dir)
@@ -97,14 +119,13 @@ def main(subject_loc, backgrounds, roi_list, meanDfLoc):
     #    print freesurfer_table[roi]
 
 
-def draw_thickness(thicknessDf,meanDf, subjName):
+def draw_thickness(thicknessDf,meanDf, subjName, meanDfName):
     thicknessDf['roi'] = thicknessDf.subroi.str[3:]
+    thicknessDf['side'] = thicknessDf.subroi.str[:2]
     meanDf['roi'] = meanDf.subroi.str[3:]
     meanDf['side'] = meanDf.subroi.str[:2]
 
     gb = thicknessDf.groupby('roi')
-
-
     thicknessDf = pd.concat([gb.get_group('LPFC'),
                         gb.get_group('OFC'),
                         gb.get_group('MPFC'),
@@ -138,7 +159,7 @@ def draw_thickness(thicknessDf,meanDf, subjName):
     #ax1 = fig.add_subplot(211)
     #ax2 = fig.add_subplot(212)
     lh_g.plot(gb.get_group('lh')['thickness'],'r',label=subjName)
-    lh_g.plot(meanDf.groupby('side').get_group('lh')['thickness'],'r--',label='mean')
+    lh_g.plot(meanDf.groupby('side').get_group('lh')['thickness'],'r--',label=meanDfName)
     lh_g.set_xticklabels(label)
     lh_g.set_xlabel('Left', fontsize=16)
     lh_g.set_ylabel('Cortical thickness in mm', fontsize=16)
@@ -146,7 +167,7 @@ def draw_thickness(thicknessDf,meanDf, subjName):
     lh_g.legend()
 
     rh_g.plot(gb.get_group('rh')['thickness'],'b',label=subjName)
-    rh_g.plot(meanDf.groupby('side').get_group('rh')['thickness'],'b--',label='mean')
+    rh_g.plot(meanDf.groupby('side').get_group('rh')['thickness'],'b--',label=meanDfName)
     rh_g.set_xticklabels(label)
     rh_g.set_xlabel('Right', fontsize=16)
     rh_g.set_ylim(1.8, 3.2)
@@ -203,6 +224,10 @@ def mergeLabel(freesurfer_dir, roiDict):
 
 
 def makeLabel(freesurfer_dir):
+    '''
+    Run mri_annotation2label for lh and rh hemisphere.
+    Creates labels in $freesurfer_dir/tmp
+    '''
     for side in ['lh','rh']:
         command = 'mri_annotation2label \
             --subject {basename} \
@@ -213,6 +238,17 @@ def makeLabel(freesurfer_dir):
 
 
 def collectStats(backgrounds):
+    '''
+    Summarise cortical thickness in more than one subjects.
+    'backgrounds' should given in python list format.
+    For each background,
+    1. Creates labels using makeLabel
+    2. Merges labels according to the roiDcit using mergeLabel
+    3. Estimates cortical thickness in each merged labels (dict)
+    4. Converts dict to pandas Dataframe using dictWithTuple2df
+    5. save df to freesurfer_dir/tmp/thick_kev.csv
+    Than mean df is returned.
+    '''
     #collectStats('ha','ho',ha')
 
     # 8 cortex dictionary
@@ -224,6 +260,14 @@ def collectStats(backgrounds):
         # freesurfer sub-directory description
         FS_description= ['bem','mri','scripts','src','stats','surf','tmp']
         freesurfer_dir = ccncpy.subDirSearch(FS_description, background)
+        print freesurfer_dir
+
+        if len(freesurfer_dir) > 1:
+            sys.exit(re.sub('\s+',' ',
+            'There are more than 1 freesurfer directory \
+                    under {0}'.format(subject_loc)))
+        else:
+            freesurfer_dir = ''.join(freesurfer_dir)
 
         if not os.path.isfile(os.path.join(freesurfer_dir,'tmp','thick_kev.csv')):
             makeLabel(freesurfer_dir)
@@ -234,6 +278,7 @@ def collectStats(backgrounds):
             
         else:
             thicknessDf = pd.read_csv(os.path.join(freesurfer_dir,'tmp','thick_kev.csv'))
+
         subjectDict[background] = thicknessDf
 
 
