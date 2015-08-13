@@ -15,30 +15,35 @@ import ccncpy.ccncpy as ccncpy
 
 def main(subject_loc, backgrounds, roi_list, meanDfLoc):
 
+    ##########################################################
+    # Freesurfer setting
+    ##########################################################
+    FS_description= ['bem','mri','scripts','src','stats','surf','tmp']
+    freesurfer_dir = ccncpy.subDirSearch(FS_description, subject_loc)
+
+    os.environ["FREESURFER_HOME"] = '/Applications/freesurfer'
+    # where is the freesurfer directory
+    os.environ["SUBJECTS_DIR"] = '{0}'.format(os.path.dirname(freesurfer_dir))
+
     # if no mean table is given but background list is given
-    if meanDfLoc == None and backgrounds != None:
+    print meanDfLoc
+    print backgrounds
+    if meanDfLoc == False and backgrounds != None:
         # make mean table
-        print 'ah'
+        print 'ha'
         meanDf = collectStats(backgrounds)
 
     # if no mean table is given, and backround list is empty
     # use subject_loc as the background
-    elif meanDfLoc == None and backgrounds == None:
+    elif meanDfLoc == False and backgrounds == None:
         meanDf = collectStats([subject_loc])
 
     # if meanDfLoc is given
     else:
-        meanDf = pd.read_csv(meanDfLoc)
+        meanDf = pd.read_csv('/ccnc_bin/meanThickness/mean_thickness.csv')
 
 
-    ##########################################################
-    # Freesurfer setting
-    ##########################################################
-    os.environ["FREESURFER_HOME"] = '/Applications/freesurfer'
-    # where is the freesurfer directory
-    os.environ["SUBJECTS_DIR"] = '{0}'.format(subject_loc)
 
-    freesurfer_dir = get_freesurfer_loc(subject_loc)
 
     ##########################################################
     # Get roi dict : 8 cortex each hemisphere
@@ -416,7 +421,8 @@ if __name__ == '__main__':
 
     parser.add_argument(
         '-m', '--meanDf',
-        help='meanDf')
+        help='meanDf',
+        action='store_true')
         #default = '/ccnc_bin/meanThickness/mean_thickness.csv')
 
     args = parser.parse_args()
