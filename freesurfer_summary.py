@@ -9,20 +9,27 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import argparse
 import textwrap
+import ccncpy.ccncpy as ccncpy
 
 
 
-def main(subject_loc, backgrounds, roi_list, meanDf):
+def main(subject_loc, backgrounds, roi_list, meanDfLoc):
 
-    ## if no mean table is given
-    if args.meanDf == None:
-        if len(backgrounds) > 1:
-            meanDf = collectStats(backgrounds)
-            #meanDf.to_csv('mean_thickness.csv')
-        else:
-            pass
+    # if no mean table is given but background list is given
+    if meanDfLoc == None and backgrounds != None:
+        # make mean table
+        print 'ah'
+        meanDf = collectStats(backgrounds)
+
+    # if no mean table is given, and backround list is empty
+    # use subject_loc as the background
+    elif meanDfLoc == None and backgrounds == None:
+        meanDf = collectStats([subject_loc])
+
+    # if meanDfLoc is given
     else:
-        meanDf = pd.read_csv(args.mean)
+        meanDf = pd.read_csv(meanDfLoc)
+
 
     ##########################################################
     # Freesurfer setting
@@ -201,11 +208,18 @@ def makeLabel(freesurfer_dir):
 
 
 def collectStats(backgrounds):
+    #collectStats('ha','ho',ha')
+
+    # 8 cortex dictionary
     roiDict = get_cortical_rois()
 
     subjectDict = {}
     for background in backgrounds:
-        freesurfer_dir = get_freesurfer_loc(background)
+
+        # freesurfer sub-directory description
+        FS_description= ['bem','mri','scripts','src','stats','surf','tmp']
+        freesurfer_dir = ccncpy.subDirSearch(FS_description, background)
+
         if not os.path.isfile(os.path.join(freesurfer_dir,'tmp','thick_kev.csv')):
             makeLabel(freesurfer_dir)
             mergeLabel(freesurfer_dir, roiDict)
@@ -303,11 +317,6 @@ def openTable(f_file):
 
     return lines_edited_dict
 
-def get_freesurfer_loc(background):
-    freesurferDIR = re.search('freesurfer',
-            ' '.join(os.listdir(background)),
-            re.IGNORECASE).group(0)
-    return os.path.join(background, freesurferDIR)
 
 def roi_extraction(subjectDir, roiName, roiNumber=False, outputDir=False):
     '''
@@ -389,7 +398,7 @@ if __name__ == '__main__':
         #default=os.getcwd())
 
     parser.add_argument(
-        '-b', '--backgroun',
+        '-b', '--backgrounds',
         nargs='+',
         help='backround subject inputs eg)-l subj1 subj2 subj3')
         #default=[x for x in os.listdir(os.getcwd()) if os.path.isdir(x)])
