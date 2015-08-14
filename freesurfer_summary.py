@@ -11,11 +11,12 @@ import matplotlib.pyplot as plt
 import argparse
 import textwrap
 import ccncpy.ccncpy as ccncpy
+from mpltools import style
+#from mpltools import layout
 
-
+style.use('ggplot')
 
 def main(subject_loc, backgrounds, roi_list, meanDfLoc):
-
     ##########################################################
     # Find freesurfer dir
     ##########################################################
@@ -63,9 +64,6 @@ def main(subject_loc, backgrounds, roi_list, meanDfLoc):
         meanDfName = 'NOR'
         meanDf = pd.read_csv('/ccnc_bin/meanThickness/mean_thickness.csv')
 
-
-
-
     ##########################################################
     # Get roi dict : 8 cortex each hemisphere
     ##########################################################
@@ -75,37 +73,16 @@ def main(subject_loc, backgrounds, roi_list, meanDfLoc):
     # annotation2label --> merge labels --> freesurfer/tmp
     ##########################################################
     thicknessDf = collectStats([os.path.dirname(freesurfer_dir)])#backgrounds)
-    #if not os.path.isfile(os.path.join(freesurfer_dir,'tmp','thick_kev.csv')):
-        #makeLabel(freesurfer_dir)
-        #mergeLabel(freesurfer_dir,roiDict)
-
-        ###########################################################
-        ## thicknessDict[side_cortex] = (thickness, std) in mm
-        ###########################################################
-        #thicknessDict = getThickness(freesurfer_dir,roiDict)
-        #thicknessDf = dictWithTuple2df(thicknessDict)
-        ##print thicknessDf
-        #thicknessDf.to_csv(os.path.join(freesurfer_dir,'tmp','thick_kev.csv'))
-    #else:
-        #thicknessDf = pd.read_csv(os.path.join(freesurfer_dir,'tmp','thick_kev.csv'))
-
     
-    try:
-        meanDf
-    except:
-        meanDf = thicknessDf
-
     if args.graph:
         draw_thickness(thicknessDf,meanDf,os.path.basename(subject_loc), meanDfName)
 
 
-    volumeDf = openStatsTable(freesurfer_dir)
-    volumeDf['name'] = volumeDf.side + '_' + volumeDf.ROI
+    #volumeDf = openStatsTable(freesurfer_dir)
+    #volumeDf['name'] = volumeDf.side + '_' + volumeDf.ROI
 
-    volumeDf = getSummary(volumeDf,roiDict)
+    #volumeDf = getSummary(volumeDf,roiDict)
     #print volumeDf
-
-
     # graph
     #draw_graph(volumeDf)
 
@@ -149,7 +126,7 @@ def draw_thickness(thicknessDf,meanDf, subjName, meanDfName):
     gb = thicknessDf.groupby('side')
     label = thicknessDf.subroi.str[3:].unique()
 
-    fig = plt.figure(figsize=(10,5))
+    fig = plt.figure(figsize=(12,8))
     fig.suptitle("Cortical thickness in eight regions", fontsize=20)
     #plt.ylabel('Cortical thickness', fontsize=16)
     #plt.xticks(range(len(label)), label)
@@ -165,6 +142,9 @@ def draw_thickness(thicknessDf,meanDf, subjName, meanDfName):
     lh_g.set_ylabel('Cortical thickness in mm', fontsize=16)
     lh_g.set_ylim(1.8, 3.2)
     lh_g.legend()
+    legend = lh_g.legend(frameon = 1)
+    frame = legend.get_frame()
+    frame.set_facecolor('white')
 
     rh_g.plot(gb.get_group('rh')['thickness'],'b',label=subjName)
     rh_g.plot(meanDf.groupby('side').get_group('rh')['thickness'],'b--',label=meanDfName)
@@ -172,7 +152,19 @@ def draw_thickness(thicknessDf,meanDf, subjName, meanDfName):
     rh_g.set_xlabel('Right', fontsize=16)
     rh_g.set_ylim(1.8, 3.2)
     rh_g.legend()
+    legend = rh_g.legend(frameon = 1)
+    frame = legend.get_frame()
+    frame.set_facecolor('white')
 
+    #plt.tight_layout()
+    #plt.tight_layout(pad=2, w_pad=2, h_pad=20)
+
+
+    #legend = plt.legend(frameon = 1)
+    #frame = legend.get_frame()
+    ##frame.set_color('white')
+    #frame.set_facecolor('white')
+    ##frame.set_edgecolor('red')
     plt.show()
 
 
@@ -182,7 +174,6 @@ def dictWithTuple2df(thicknessDict):
     df = df[df.level_0==0].merge(df[df.level_0==1], on='level_1', how='inner')
     df.columns = ['__','subroi','thickness','_','std']
     df['side'] = df['subroi'].str[:2]
-
     return df[['subroi','thickness','side','std']]
 
 
