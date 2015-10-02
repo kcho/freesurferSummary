@@ -137,10 +137,21 @@ def draw_thickness(thicknessDf,meanDf, subjName, meanDfName):
     #ax2 = fig.add_subplot(212)
     lh_g.plot(gb.get_group('lh')['thickness'],'r',label=subjName)
     lh_g.plot(meanDf.groupby('side').get_group('lh')['thickness'],'r--',label=meanDfName)
+
+    # error bar
+    print meanDf.groupby('side').get_group('lh')['std']
+    eb1 = lh_g.errorbar(range(len(meanDf.roi.unique())),
+                        meanDf.groupby('side').get_group('lh')['thickness'],
+                        meanDf.groupby('side').get_group('lh')['std'],
+                        linestyle='None',
+                        marker='^')
+    eb1[-1][0].set_linestyle('--')
+
     lh_g.set_xticklabels(label)
     lh_g.set_xlabel('Left', fontsize=16)
     lh_g.set_ylabel('Cortical thickness in mm', fontsize=16)
-    lh_g.set_ylim(1.8, 3.2)
+    lh_g.set_ylim(1.0, 4)
+    lh_g.set_xlim(-0.5, 7.5)
     lh_g.legend()
     legend = lh_g.legend(frameon = 1)
     frame = legend.get_frame()
@@ -148,9 +159,20 @@ def draw_thickness(thicknessDf,meanDf, subjName, meanDfName):
 
     rh_g.plot(gb.get_group('rh')['thickness'],'b',label=subjName)
     rh_g.plot(meanDf.groupby('side').get_group('rh')['thickness'],'b--',label=meanDfName)
+
+    # error bar
+    eb2 = rh_g.errorbar(range(len(meanDf.roi.unique())),
+                        meanDf.groupby('side').get_group('rh')['thickness'],
+                        meanDf.groupby('side').get_group('rh')['std'],
+                        linestyle='None',
+                        marker='^',
+                        color='b')
+    eb2[-1][0].set_linestyle('--')
+
     rh_g.set_xticklabels(label)
     rh_g.set_xlabel('Right', fontsize=16)
-    rh_g.set_ylim(1.8, 3.2)
+    rh_g.set_ylim(1, 4)
+    rh_g.set_xlim(-0.5, 7.5)
     rh_g.legend()
     legend = rh_g.legend(frameon = 1)
     frame = legend.get_frame()
@@ -170,6 +192,7 @@ def draw_thickness(thicknessDf,meanDf, subjName, meanDfName):
 
 
 def dictWithTuple2df(thicknessDict):
+    print thicknessDict
     df = pd.DataFrame.from_dict(thicknessDict)
     df = df.stack().reset_index()
     df = df[df.level_0==0].merge(df[df.level_0==1], on='level_1', how='inner')
@@ -459,6 +482,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '-m', '--meanDf',
         help='meanDf',
+
         action='store_true')
         #default = '/ccnc_bin/meanThickness/mean_thickness.csv')
 
