@@ -166,6 +166,7 @@ def draw_thickness(thicknessDf,meanDf, subjName, meanDfName):
     #frame.set_facecolor('white')
     ##frame.set_edgecolor('red')
     plt.show()
+    plt.save('ha.png')
 
 
 def dictWithTuple2df(thicknessDict):
