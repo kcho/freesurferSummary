@@ -62,7 +62,7 @@ def main(subject_loc, backgrounds, roi_list, meanDfLoc):
     else:
         print 'Now comparing with mean_thickness.csv in /ccnc_bin/meanThickness/'
         meanDfName = 'NOR'
-        meanDf = pd.read_csv('/ccnc_bin/meanThickness/mean_thickness.csv')
+        meanDf = pd.read_csv('/ccnc_bin/meanThickness/new_mean_OCT15.csv')
 
     ##########################################################
     # Get roi dict : 8 cortex each hemisphere
