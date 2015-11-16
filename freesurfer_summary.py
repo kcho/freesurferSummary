@@ -136,10 +136,12 @@ def draw_thickness(thicknessDf,meanDf, subjName, meanDfName):
     #ax1 = fig.add_subplot(211)
     #ax2 = fig.add_subplot(212)
     lh_g.plot(gb.get_group('lh')['thickness'],'r',label=subjName)
+
     lh_g.plot(meanDf.groupby('side').get_group('lh')['thickness'],'r--',label=meanDfName)
 
     # error bar
     print meanDf.groupby('side').get_group('lh')['std']
+
     eb1 = lh_g.errorbar(range(len(meanDf.roi.unique())),
                         meanDf.groupby('side').get_group('lh')['thickness'],
                         meanDf.groupby('side').get_group('lh')['std'],
@@ -147,15 +149,20 @@ def draw_thickness(thicknessDf,meanDf, subjName, meanDfName):
                         marker='^')
     eb1[-1][0].set_linestyle('--')
 
-    lh_g.set_xticklabels(label)
     lh_g.set_xlabel('Left', fontsize=16)
     lh_g.set_ylabel('Cortical thickness in mm', fontsize=16)
     lh_g.set_ylim(1.0, 4)
-    lh_g.set_xlim(-0.5, 7.5)
+
+    lh_g.set_xticks(range(8))
+    lh_g.set_xticklabels(label)
+    lh_g.set_xlim(-.5, 7.5)
     lh_g.legend()
     legend = lh_g.legend(frameon = 1)
     frame = legend.get_frame()
     frame.set_facecolor('white')
+
+
+
 
     rh_g.plot(gb.get_group('rh')['thickness'],'b',label=subjName)
     rh_g.plot(meanDf.groupby('side').get_group('rh')['thickness'],'b--',label=meanDfName)
@@ -169,10 +176,18 @@ def draw_thickness(thicknessDf,meanDf, subjName, meanDfName):
                         color='b')
     eb2[-1][0].set_linestyle('--')
 
-    rh_g.set_xticklabels(label)
+    #label = ['LPFC' 'OFC' 'MPFC' 'LTC' 'MTC' 'SMC' 'PC' 'OCC','b']
+    xticksNum = range(8)
+
+    #rh_g.set_xticklabels(label)
+    print label
     rh_g.set_xlabel('Right', fontsize=16)
     rh_g.set_ylim(1, 4)
-    rh_g.set_xlim(-0.5, 7.5)
+    rh_g.set_xlim(-.5, 7.5)
+    rh_g.set_xticks(range(8))
+    rh_g.set_xticklabels(label)
+
+
     rh_g.legend()
     legend = rh_g.legend(frameon = 1)
     frame = legend.get_frame()
