@@ -113,22 +113,23 @@ def draw_thickness_detailed(thicknessDf,meanDf, subjName, meanDfName):
     meanDf['roi'] = meanDf.subroi.str[3:]
     meanDf['side'] = meanDf.subroi.str[:2]
 
-    gb = thicknessDf.groupby('roi')
-    thicknessDf = pd.concat([gb.get_group('all')])
+    #gb = thicknessDf.groupby('roi')
+    #thicknessDf = pd.concat([gb.get_group('all')])
+    print len(thicknessDf.roi.unique())
 
     gbmean = meanDf.groupby('roi')
-    meanDf = pd.concat([gbmean.get_group('all')])
+    #meanDf = pd.concat([gbmean.get_group('all')])
                         
     gb = thicknessDf.groupby('side')
     label = thicknessDf.subroi.str[3:].unique()
 
-    fig = plt.figure(figsize=(12,8))
+    fig = plt.figure(figsize=(22,8))
     fig.suptitle("Cortical thickness in all regions", fontsize=20)
     #plt.ylabel('Cortical thickness', fontsize=16)
     #plt.xticks(range(len(label)), label)
 
-    lh_g = plt.subplot2grid((2,2),(0, 0), rowspan=2)
-    rh_g = plt.subplot2grid((2,2),(0, 1), rowspan=2)
+    lh_g = plt.subplot2grid((2,2),(0, 0), colspan=2)
+    rh_g = plt.subplot2grid((2,2),(1, 0), colspan=2)
     #ax1 = fig.add_subplot(211)
     #ax2 = fig.add_subplot(212)
     lh_g.plot(gb.get_group('lh')['thickness'],'r',label=subjName)
@@ -149,9 +150,9 @@ def draw_thickness_detailed(thicknessDf,meanDf, subjName, meanDfName):
     lh_g.set_ylabel('Cortical thickness in mm', fontsize=16)
     lh_g.set_ylim(1.0, 4)
 
-    lh_g.set_xticks(range(8))
+    lh_g.set_xticks(range(len(label)))
     lh_g.set_xticklabels(label)
-    lh_g.set_xlim(-.5, 7.5)
+    lh_g.set_xlim(-.5, 32.5)
     lh_g.legend()
     legend = lh_g.legend(frameon = 1)
     frame = legend.get_frame()
@@ -179,8 +180,8 @@ def draw_thickness_detailed(thicknessDf,meanDf, subjName, meanDfName):
     print label
     rh_g.set_xlabel('Right', fontsize=16)
     rh_g.set_ylim(1, 4)
-    rh_g.set_xlim(-.5, 7.5)
-    rh_g.set_xticks(range(8))
+    rh_g.set_xlim(-.5, 32.5)
+    rh_g.set_xticks(range(len(label)))
     rh_g.set_xticklabels(label)
 
 
