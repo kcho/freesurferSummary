@@ -16,7 +16,7 @@ from mpltools import style
 
 style.use('ggplot')
 
-def main(subject_loc, backgrounds, roi_list, meanDfLoc):
+def main(subject_loc, backgrounds, roi_list, meanDfLoc,verbose):
     ##########################################################
     # Find freesurfer dir
     ##########################################################
@@ -49,14 +49,22 @@ def main(subject_loc, backgrounds, roi_list, meanDfLoc):
         print 'Calculating cortical thickness in {0}'.format(backgrounds)
         # make mean table
         meanDfName = raw_input('Name of the background subject : ')
-        meanDf = collectStats(backgrounds)
+
+        if verbose:
+            meanDf = collectStats_v2(backgrounds)
+        else:
+            meanDf = collectStats(backgrounds)
 
     # if no mean table is given, and backround list is empty
     # use subject_loc as the background
     elif meanDfLoc == False and backgrounds == None:
         print 'No background subjects are given, now running only {0}'.format(subject_loc)
         meanDfName = ''
-        meanDf = collectStats([subject_loc])
+
+        if verbose:
+            meanDf = collectStats_v2([subject_loc])
+        else:
+            meanDf = collectStats([subject_loc])
 
     # if meanDfLoc is given
     else:
@@ -72,10 +80,13 @@ def main(subject_loc, backgrounds, roi_list, meanDfLoc):
     ##########################################################
     # annotation2label --> merge labels --> freesurfer/tmp
     ##########################################################
-    thicknessDf = collectStats([os.path.dirname(freesurfer_dir)])#backgrounds)
+    thicknessDf = collectStats_v2([os.path.dirname(freesurfer_dir)])#backgrounds)
     
     if args.graph:
-        draw_thickness(thicknessDf,meanDf,os.path.basename(subject_loc), meanDfName)
+        if verbose:
+            draw_thickness_detailed(thicknessDf,meanDf,os.path.basename(subject_loc), meanDfName)
+        else:
+            draw_thickness(thicknessDf,meanDf,os.path.basename(subject_loc), meanDfName)
 
 
     #volumeDf = openStatsTable(freesurfer_dir)
@@ -95,6 +106,99 @@ def main(subject_loc, backgrounds, roi_list, meanDfLoc):
     #for roi in roi_list:
     #    print freesurfer_table[roi]
 
+def draw_thickness_detailed(thicknessDf,meanDf, subjName, meanDfName):
+    thicknessDf['roi'] = thicknessDf.subroi.str[3:]
+    thicknessDf['side'] = thicknessDf.subroi.str[:2]
+    meanDf['roi'] = meanDf.subroi.str[3:]
+    meanDf['side'] = meanDf.subroi.str[:2]
+
+    gb = thicknessDf.groupby('roi')
+    thicknessDf = pd.concat([gb.get_group('all')])
+
+    gbmean = meanDf.groupby('roi')
+    meanDf = pd.concat([gbmean.get_group('all')])
+                        
+    gb = thicknessDf.groupby('side')
+    label = thicknessDf.subroi.str[3:].unique()
+
+    fig = plt.figure(figsize=(12,8))
+    fig.suptitle("Cortical thickness in all regions", fontsize=20)
+    #plt.ylabel('Cortical thickness', fontsize=16)
+    #plt.xticks(range(len(label)), label)
+
+    lh_g = plt.subplot2grid((2,2),(0, 0), rowspan=2)
+    rh_g = plt.subplot2grid((2,2),(0, 1), rowspan=2)
+    #ax1 = fig.add_subplot(211)
+    #ax2 = fig.add_subplot(212)
+    lh_g.plot(gb.get_group('lh')['thickness'],'r',label=subjName)
+
+    lh_g.plot(meanDf.groupby('side').get_group('lh')['thickness'],'r--',label=meanDfName)
+
+    # error bar
+    print meanDf.groupby('side').get_group('lh')['std']
+
+    eb1 = lh_g.errorbar(range(len(meanDf.roi.unique())),
+                        meanDf.groupby('side').get_group('lh')['thickness'],
+                        meanDf.groupby('side').get_group('lh')['std'],
+                        linestyle='None',
+                        marker='^')
+    eb1[-1][0].set_linestyle('--')
+
+    lh_g.set_xlabel('Left', fontsize=16)
+    lh_g.set_ylabel('Cortical thickness in mm', fontsize=16)
+    lh_g.set_ylim(1.0, 4)
+
+    lh_g.set_xticks(range(8))
+    lh_g.set_xticklabels(label)
+    lh_g.set_xlim(-.5, 7.5)
+    lh_g.legend()
+    legend = lh_g.legend(frameon = 1)
+    frame = legend.get_frame()
+    frame.set_facecolor('white')
+
+
+
+
+    rh_g.plot(gb.get_group('rh')['thickness'],'b',label=subjName)
+    rh_g.plot(meanDf.groupby('side').get_group('rh')['thickness'],'b--',label=meanDfName)
+
+    # error bar
+    eb2 = rh_g.errorbar(range(len(meanDf.roi.unique())),
+                        meanDf.groupby('side').get_group('rh')['thickness'],
+                        meanDf.groupby('side').get_group('rh')['std'],
+                        linestyle='None',
+                        marker='^',
+                        color='b')
+    eb2[-1][0].set_linestyle('--')
+
+    #label = ['LPFC' 'OFC' 'MPFC' 'LTC' 'MTC' 'SMC' 'PC' 'OCC','b']
+    xticksNum = range(8)
+
+    #rh_g.set_xticklabels(label)
+    print label
+    rh_g.set_xlabel('Right', fontsize=16)
+    rh_g.set_ylim(1, 4)
+    rh_g.set_xlim(-.5, 7.5)
+    rh_g.set_xticks(range(8))
+    rh_g.set_xticklabels(label)
+
+
+    rh_g.legend()
+    legend = rh_g.legend(frameon = 1)
+    frame = legend.get_frame()
+    frame.set_facecolor('white')
+
+    #plt.tight_layout()
+    #plt.tight_layout(pad=2, w_pad=2, h_pad=20)
+
+
+    #legend = plt.legend(frameon = 1)
+    #frame = legend.get_frame()
+    ##frame.set_color('white')
+    #frame.set_facecolor('white')
+    ##frame.set_edgecolor('red')
+    plt.show()
+    plt.save('ha.png')
 
 def draw_thickness(thicknessDf,meanDf, subjName, meanDfName):
     thicknessDf['roi'] = thicknessDf.subroi.str[3:]
@@ -222,22 +326,38 @@ def getThickness(freesurfer_dir,roiDict):
     thicknessDict={}
     for side in ['lh','rh']:
         for cortex, rois in roiDict.iteritems():
-            command = 'mris_anatomical_stats \
-            -l {loc}/{side}_{cortex} FREESURFER {side} 2>/dev/null'.format(
-                loc=os.path.join(freesurfer_dir,'tmp'),
-                side=side,
-                cortex=cortex
-            )
+            if len(rois) > 1:
+                command = 'mris_anatomical_stats \
+                -l {loc}/{side}_{cortex} FREESURFER {side} 2>/dev/null'.format(
+                    loc=os.path.join(freesurfer_dir,'tmp'),
+                    side=side,
+                    cortex=cortex
+                )
+            else:
+                command = 'mris_anatomical_stats \
+                -l {loc}/{side}.{cortex}.label FREESURFER {side} 2>/dev/null'.format(
+                    loc=os.path.join(freesurfer_dir,'tmp'),
+                    side=side,
+                    cortex=cortex
+                )
+            #print command
+
             output=os.popen(re.sub('\s+',' ',command)).read()
+
+            #print cortex, rois, '****'*10
+            #print output
             thickness = re.search('thickness\s+=\s+(\S+)\s+mm\s+\S+\s+(\S+)', output).group(1,2)
             thickness = tuple([float(x) for x in thickness])
             thicknessDict[side+'_'+cortex] = thickness
-            print thickness
-            os.remove('{loc}/{side}_{cortex}'.format(
-                loc=os.path.join(freesurfer_dir,'tmp'),
-                side=side,
-                cortex=cortex
-            ))
+            print cortex, thickness
+            try:
+                os.remove('{loc}/{side}_{cortex}'.format(
+                    loc=os.path.join(freesurfer_dir,'tmp'),
+                    side=side,
+                    cortex=cortex
+                ))
+            except:
+                pass
     return thicknessDict
 
 
@@ -249,8 +369,12 @@ def mergeLabel(freesurfer_dir, roiDict):
                 outLabel = os.path.join(freesurfer_dir,'tmp',side+'_'+cortex))
             os.popen(command).read()
 
-            for roi in [os.path.join(freesurfer_dir,'tmp',side+'.'+x+'.label') for x in rois]:
-                os.remove(roi)
+            #for roi in [os.path.join(freesurfer_dir,'tmp',side+'.'+x+'.label') for x in rois]:
+                #print roi
+                #try:
+                    #os.remove(roi)
+                #except:
+                    #pass
 
 
 def makeLabel(freesurfer_dir):
@@ -266,6 +390,56 @@ def makeLabel(freesurfer_dir):
                                                     outDir=os.path.join(freesurfer_dir,'tmp'))
         os.popen(re.sub('\s+',' ',command)).read()
 
+def collectStats_v2(backgrounds):
+    '''
+    CollectStats version 2
+    Summarise cortical thickness in more than one subjects.
+    'backgrounds' should given in python list format.
+    For each background,
+    1. Creates labels using makeLabel
+    2. Merges labels according to the roiDcit using mergeLabel
+    3. Estimates cortical thickness in each merged labels (dict)
+    4. Converts dict to pandas Dataframe using dictWithTuple2df
+    5. save df to freesurfer_dir/tmp/thick_kev_detailed.csv
+    Than mean df is returned.
+    '''
+    #collectStats('ha','ho',ha')
+
+    # cortical regions as a dictionary
+    roiDict = get_cortical_rois_detailed()
+
+    subjectDict = {}
+    for background in backgrounds:
+        # freesurfer sub-directory description
+        FS_description= ['bem','mri','scripts','src','stats','surf','tmp']
+        freesurfer_dir = ccncpy.subDirSearch(FS_description, background)
+        print freesurfer_dir
+
+        if len(freesurfer_dir) > 1:
+            sys.exit(re.sub('\s+',' ',
+            'There are more than 1 freesurfer directory \
+                    under {0}'.format(subject_loc)))
+        else:
+            freesurfer_dir = ''.join(freesurfer_dir)
+
+        if not os.path.isfile(os.path.join(freesurfer_dir,'tmp','thick_kev_detailed.csv')):
+            makeLabel(freesurfer_dir)
+            mergeLabel(freesurfer_dir, roiDict)
+            thicknessDict = getThickness(freesurfer_dir, roiDict)
+            thicknessDf = dictWithTuple2df(thicknessDict)
+            thicknessDf.to_csv(os.path.join(freesurfer_dir,'tmp','thick_kev_detailed.csv'))
+            
+        else:
+            thicknessDf = pd.read_csv(os.path.join(freesurfer_dir,'tmp','thick_kev_detailed.csv'))
+
+        subjectDict[background] = thicknessDf
+
+
+    # sum up dataframes in a subjectDict dictionary
+    finalDf = pd.concat([x for x in subjectDict.values()])
+
+    # return mean
+    return finalDf.groupby('subroi').mean().reset_index()
 
 def collectStats(backgrounds):
     '''
@@ -446,6 +620,9 @@ def roi_extraction(subjectDir, roiName, roiNumber=False, outputDir=False):
 
 
 def get_cortical_rois():
+    '''
+    returns 8 cortical divisions in dictionary
+    '''
     roiDict = {'OFC' : ['parsorbitalis', 'medialorbitofrontal', 'lateralorbitofrontal'],
            'MPFC' : ['caudalanteriorcingulate', 'rostralanteriorcingulate', 'superiorfrontal'],
            'LPFC' : [ 'parstriangularis', 'rostralmiddlefrontal', 'frontalpole', 'parsopercularis'],
@@ -455,6 +632,31 @@ def get_cortical_rois():
            'LTC' : ['transversetemporal', 'superiortemporal', 'bankssts', 'inferiortemporal', 'middletemporal', 'temporalpole'],
            'OCC' : ['pericalcarine', 'lingual', 'lateraloccipital', 'cuneus']}
     return roiDict
+
+def get_cortical_rois_detailed():
+    '''
+    returns more detailed cortical divisions
+    '''
+    roiDict = {'OFC' : ['parsorbitalis', 'medialorbitofrontal', 'lateralorbitofrontal'],
+           'MPFC' : ['caudalanteriorcingulate', 'rostralanteriorcingulate', 'superiorfrontal'],
+           'LPFC' : [ 'parstriangularis', 'rostralmiddlefrontal', 'frontalpole', 'parsopercularis'],
+           'SMC' : [ 'precentral', 'caudalmiddlefrontal', 'postcentral', 'paracentral'],
+           'PC' : ['inferiorparietal', 'supramarginal', 'precuneus', 'posteriorcingulate', 'isthmuscingulate', 'superiorparietal'],
+           'MTC' : ['entorhinal', 'parahippocampal', 'fusiform'],
+           'LTC' : ['transversetemporal', 'superiortemporal', 'bankssts', 'inferiortemporal', 'middletemporal', 'temporalpole'],
+           'OCC' : ['pericalcarine', 'lingual', 'lateraloccipital', 'cuneus']}
+
+    detailed = []
+    for key, roi_list in roiDict.iteritems():
+        detailed = detailed + roi_list
+
+
+    detailed_ROIs = {}
+    for roi in detailed:
+        detailed_ROIs[roi] = [roi]
+
+    print detailed_ROIs
+    return detailed_ROIs
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -501,6 +703,12 @@ if __name__ == '__main__':
         action='store_true')
         #default = '/ccnc_bin/meanThickness/mean_thickness.csv')
 
+    parser.add_argument(
+        '-v', '--verbose',
+        help='Use detailed ROIs',
+        action='store_true')
+        #default = '/ccnc_bin/meanThickness/mean_thickness.csv')
+
     args = parser.parse_args()
 
-    main(args.inputDir, args.backgrounds, args.rois, args.meanDf)
+    main(args.inputDir, args.backgrounds, args.rois, args.meanDf, args.verbose)
