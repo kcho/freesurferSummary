@@ -1,6 +1,6 @@
+from __future__ import division
 #!/ccnc_bin/venv/bin/python
 __author__ = 'kcho'
-
 import re
 import os
 import sys
@@ -112,6 +112,7 @@ def main(subject_loc, backgrounds, roi_list, meanDfLoc,verbose):
     #    print freesurfer_table[roi]
 
 def draw_thickness_detailed(thicknessDf, meanDf, subjName, meanDfName):
+    roiOrder = ['LPFC', 'OFC', 'MPFC', 'LTC', 'MTC', 'SMC', 'PC', 'OCC']
 
     def getRegion(roi):
         roiDict = get_cortical_rois()
@@ -193,19 +194,31 @@ def draw_thickness_detailed(thicknessDf, meanDf, subjName, meanDfName):
     startNum = 0
     switch = 0
     x_starting_point = 0
-    for region, rois in roiDict.iteritems():
+    for region in roiOrder:
         if switch == 0:
             switch = 1 
             pass
             x_starting_point = startNum
-            startNum = startNum + len(rois)
+            startNum = startNum + len(roiDict[region])
+
+            lh_g.text((x_starting_point-.5 + startNum-.5)/2, 1.2,
+                    region,
+                    horizontalalignment='center',
+                    fontsize=15)
         else:
             alpha = 0.2
             col='green'
             p = lh_g.axvspan(x_starting_point-.5, startNum-.5, facecolor=col, alpha=alpha)
             x_starting_point = startNum
-            startNum = startNum + len(rois)
+            startNum = startNum + len(roiDict[region])
             switch = 0 
+
+            lh_g.text((x_starting_point-.5 + startNum-.5)/2, 1.2,
+                    region,
+                    horizontalalignment='center',
+                    fontsize=15)
+
+    ## annotation
 
 
 
@@ -242,19 +255,30 @@ def draw_thickness_detailed(thicknessDf, meanDf, subjName, meanDfName):
     startNum = 0
     switch = 0
     x_starting_point = 0
-    for region, rois in roiDict.iteritems():
+    for region in roiOrder:
         if switch == 0:
             switch = 1 
             pass
             x_starting_point = startNum
-            startNum = startNum + len(rois)
+            startNum = startNum + len(roiDict[region])
+
+            rh_g.text((x_starting_point-.5 + startNum-.5)/2, 1.2,
+                    region,
+                    horizontalalignment='center',
+                    fontsize=15)
         else:
             alpha = 0.2
             col='green'
             p = rh_g.axvspan(x_starting_point-.5, startNum-.5, facecolor=col, alpha=alpha)
             x_starting_point = startNum
-            startNum = startNum + len(rois)
+            startNum = startNum + len(roiDict[region])
             switch = 0 
+
+            rh_g.text((x_starting_point-.5 + startNum-.5)/2, 1.2,
+                    region,
+                    horizontalalignment='center',
+                    fontsize=15)
+
     #plt.tight_layout()
     plt.tight_layout(pad=5, w_pad=2, h_pad=0.1)
 
