@@ -80,12 +80,13 @@ def main(subject_loc, backgrounds, roi_list, meanDfLoc,verbose):
     ##########################################################
     # annotation2label --> merge labels --> freesurfer/tmp
     ##########################################################
-    thicknessDf = collectStats_v2([os.path.dirname(freesurfer_dir)])#backgrounds)
     
     if args.graph:
         if verbose:
+            thicknessDf = collectStats_v2([os.path.dirname(freesurfer_dir)])#backgrounds)
             draw_thickness_detailed(thicknessDf,meanDf,os.path.basename(subject_loc), meanDfName)
         else:
+            thicknessDf = collectStats([os.path.dirname(freesurfer_dir)])#backgrounds)
             draw_thickness(thicknessDf,meanDf,os.path.basename(subject_loc), meanDfName)
 
 
