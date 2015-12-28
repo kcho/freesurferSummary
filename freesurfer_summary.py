@@ -204,6 +204,7 @@ def draw_thickness_detailed(thicknessDf, meanDf, subjName, meanDfName):
             lh_g.text((x_starting_point-.5 + startNum-.5)/2, 1.2,
                     region,
                     horizontalalignment='center',
+                    alpha=.4,
                     fontsize=15)
         else:
             alpha = 0.2
@@ -216,9 +217,29 @@ def draw_thickness_detailed(thicknessDf, meanDf, subjName, meanDfName):
             lh_g.text((x_starting_point-.5 + startNum-.5)/2, 1.2,
                     region,
                     horizontalalignment='center',
+                    alpha=.4,
                     fontsize=15)
 
     ## annotation
+    mergedDf = pd.merge(meanDf.groupby('side').get_group('lh'),
+                        gb.get_group('lh'),
+                        on=['roi','side','region'],
+                        how='inner')
+
+    mergedDf['mean_sub_indv'] = mergedDf.thickness_x - mergedDf.thickness_y
+    print mergedDf[abs(mergedDf['mean_sub_indv']) > 0.3]
+    for row in mergedDf[abs(mergedDf['mean_sub_indv']) > 0.3].iterrows():
+        print row
+        #lh_g.text(row[0], row[1].thickness_y - row[1].mean_sub_indv/2,
+                #row[1].roi,
+                #horizontalalignment='center',
+                #fontsize=20)
+        lh_g.annotate(row[1].roi,
+                xy=(row[0], row[1].thickness_y),
+                xytext=(row[0], 1.5-row[1].mean_sub_indv/2),
+                arrowprops=dict(facecolor='green', shrink=0.05),
+                horizontalalignment='left',
+                fontsize=20)
 
 
 
@@ -278,6 +299,27 @@ def draw_thickness_detailed(thicknessDf, meanDf, subjName, meanDfName):
                     region,
                     horizontalalignment='center',
                     fontsize=15)
+
+    ## annotation
+    mergedDf = pd.merge(meanDf.groupby('side').get_group('rh'),
+                        gb.get_group('rh'),
+                        on=['roi','side','region'],
+                        how='inner')
+
+    mergedDf['mean_sub_indv'] = mergedDf.thickness_x - mergedDf.thickness_y
+    print mergedDf[abs(mergedDf['mean_sub_indv']) > 0.3]
+    for row in mergedDf[abs(mergedDf['mean_sub_indv']) > 0.3].iterrows():
+        print row
+        #rh_g.text(row[0], row[1].thickness_y - row[1].mean_sub_indv/2,
+                #row[1].roi,
+                #horizontalalignment='center',
+                #fontsize=20)
+        rh_g.annotate(row[1].roi,
+                xy=(row[0], row[1].thickness_y),
+                xytext=(row[0], 1.5-row[1].mean_sub_indv/2),
+                arrowprops=dict(facecolor='green', shrink=0.05),
+                horizontalalignment='left',
+                fontsize=20)
 
     #plt.tight_layout()
     plt.tight_layout(pad=5, w_pad=2, h_pad=0.1)
