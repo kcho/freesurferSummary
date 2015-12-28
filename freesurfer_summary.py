@@ -70,7 +70,11 @@ def main(subject_loc, backgrounds, roi_list, meanDfLoc,verbose):
     else:
         print 'Now comparing with mean_thickness.csv in /ccnc_bin/meanThickness/'
         meanDfName = 'NOR'
-        meanDf = pd.read_csv('/ccnc_bin/meanThickness/new_mean_OCT15.csv')
+        #meanDf = pd.read_csv('/ccnc_bin/meanThickness/new_mean_OCT15.csv')
+        if verbose:
+            meanDf = pd.read_csv('/ccnc_bin/meanThickness/detailed_mean_2015_12_28.csv', index_col=0)
+        else:
+            meanDf = pd.read_csv('/ccnc_bin/meanThickness/new_mean_OCT15.csv', index_col=0)
 
     ##########################################################
     # Get roi dict : 8 cortex each hemisphere
@@ -107,24 +111,51 @@ def main(subject_loc, backgrounds, roi_list, meanDfLoc,verbose):
     #for roi in roi_list:
     #    print freesurfer_table[roi]
 
-def draw_thickness_detailed(thicknessDf,meanDf, subjName, meanDfName):
+def draw_thickness_detailed(thicknessDf, meanDf, subjName, meanDfName):
+
+    def getRegion(roi):
+        roiDict = get_cortical_rois()
+        for region, roiList in roiDict.iteritems():
+            if roi in roiList:
+                return region
+
     thicknessDf['roi'] = thicknessDf.subroi.str[3:]
     thicknessDf['side'] = thicknessDf.subroi.str[:2]
+    thicknessDf['region'] = thicknessDf.roi.apply(getRegion)
+    print thicknessDf.head()
     meanDf['roi'] = meanDf.subroi.str[3:]
     meanDf['side'] = meanDf.subroi.str[:2]
+    meanDf = meanDf.groupby(['roi','side']).mean().reset_index()
+    meanDf['region'] = meanDf.roi.apply(getRegion)
+    print meanDf
 
-    #gb = thicknessDf.groupby('roi')
-    #thicknessDf = pd.concat([gb.get_group('all')])
-    print len(thicknessDf.roi.unique())
+    gb = thicknessDf.groupby('region')
+    thicknessDf = pd.concat([gb.get_group('LPFC'),
+                        gb.get_group('OFC'),
+                        gb.get_group('MPFC'),
+                        gb.get_group('LTC'),
+                        gb.get_group('MTC'),
+                        gb.get_group('SMC'),
+                        gb.get_group('PC'),
+                        gb.get_group('OCC')])
 
-    gbmean = meanDf.groupby('roi')
-    #meanDf = pd.concat([gbmean.get_group('all')])
+    gbmean = meanDf.groupby('region')
+    meanDf = pd.concat([gbmean.get_group('LPFC'),
+                        gbmean.get_group('OFC'),
+                        gbmean.get_group('MPFC'),
+                        gbmean.get_group('LTC'),
+                        gbmean.get_group('MTC'),
+                        gbmean.get_group('SMC'),
+                        gbmean.get_group('PC'),
+                        gbmean.get_group('OCC')])
                         
     gb = thicknessDf.groupby('side')
     label = thicknessDf.subroi.str[3:].unique()
 
-    fig = plt.figure(figsize=(22,8))
+    fig = plt.figure(figsize=(22,12))
     fig.suptitle("Cortical thickness in all regions", fontsize=20)
+    #fig.set_ylabel('Cortical thickness in mm', fontsize=16)
+
     #plt.ylabel('Cortical thickness', fontsize=16)
     #plt.xticks(range(len(label)), label)
 
@@ -137,7 +168,6 @@ def draw_thickness_detailed(thicknessDf,meanDf, subjName, meanDfName):
     lh_g.plot(meanDf.groupby('side').get_group('lh')['thickness'],'r--',label=meanDfName)
 
     # error bar
-    print meanDf.groupby('side').get_group('lh')['std']
 
     eb1 = lh_g.errorbar(range(len(meanDf.roi.unique())),
                         meanDf.groupby('side').get_group('lh')['thickness'],
@@ -147,16 +177,35 @@ def draw_thickness_detailed(thicknessDf,meanDf, subjName, meanDfName):
     eb1[-1][0].set_linestyle('--')
 
     lh_g.set_xlabel('Left', fontsize=16)
-    lh_g.set_ylabel('Cortical thickness in mm', fontsize=16)
-    lh_g.set_ylim(1.0, 4)
+    #lh_g.set_ylabel('Cortical thickness in mm', fontsize=16)
+    lh_g.set_ylim(1.0, 4.7)
 
     lh_g.set_xticks(range(len(label)))
-    lh_g.set_xticklabels(label)
+    lh_g.set_xticklabels(['' for x in label])
     lh_g.set_xlim(-.5, 32.5)
     lh_g.legend()
     legend = lh_g.legend(frameon = 1)
     frame = legend.get_frame()
     frame.set_facecolor('white')
+
+    ######fill
+    roiDict = get_cortical_rois()
+    startNum = 0
+    switch = 0
+    x_starting_point = 0
+    for region, rois in roiDict.iteritems():
+        if switch == 0:
+            switch = 1 
+            pass
+            x_starting_point = startNum
+            startNum = startNum + len(rois)
+        else:
+            alpha = 0.2
+            col='green'
+            p = lh_g.axvspan(x_starting_point-.5, startNum-.5, facecolor=col, alpha=alpha)
+            x_starting_point = startNum
+            startNum = startNum + len(rois)
+            switch = 0 
 
 
 
@@ -164,7 +213,7 @@ def draw_thickness_detailed(thicknessDf,meanDf, subjName, meanDfName):
     rh_g.plot(gb.get_group('rh')['thickness'],'b',label=subjName)
     rh_g.plot(meanDf.groupby('side').get_group('rh')['thickness'],'b--',label=meanDfName)
 
-    # error bar
+    #error bar
     eb2 = rh_g.errorbar(range(len(meanDf.roi.unique())),
                         meanDf.groupby('side').get_group('rh')['thickness'],
                         meanDf.groupby('side').get_group('rh')['std'],
@@ -177,9 +226,8 @@ def draw_thickness_detailed(thicknessDf,meanDf, subjName, meanDfName):
     xticksNum = range(8)
 
     #rh_g.set_xticklabels(label)
-    print label
     rh_g.set_xlabel('Right', fontsize=16)
-    rh_g.set_ylim(1, 4)
+    rh_g.set_ylim(1, 4.7)
     rh_g.set_xlim(-.5, 32.5)
     rh_g.set_xticks(range(len(label)))
     rh_g.set_xticklabels(label)
@@ -190,8 +238,25 @@ def draw_thickness_detailed(thicknessDf,meanDf, subjName, meanDfName):
     frame = legend.get_frame()
     frame.set_facecolor('white')
 
+    ######fill
+    startNum = 0
+    switch = 0
+    x_starting_point = 0
+    for region, rois in roiDict.iteritems():
+        if switch == 0:
+            switch = 1 
+            pass
+            x_starting_point = startNum
+            startNum = startNum + len(rois)
+        else:
+            alpha = 0.2
+            col='green'
+            p = rh_g.axvspan(x_starting_point-.5, startNum-.5, facecolor=col, alpha=alpha)
+            x_starting_point = startNum
+            startNum = startNum + len(rois)
+            switch = 0 
     #plt.tight_layout()
-    #plt.tight_layout(pad=2, w_pad=2, h_pad=20)
+    plt.tight_layout(pad=5, w_pad=2, h_pad=0.1)
 
 
     #legend = plt.legend(frameon = 1)
@@ -199,6 +264,10 @@ def draw_thickness_detailed(thicknessDf,meanDf, subjName, meanDfName):
     ##frame.set_color('white')
     #frame.set_facecolor('white')
     ##frame.set_edgecolor('red')
+    labels = rh_g.get_xticklabels()
+    plt.setp(labels, rotation=30)
+    labels = lh_g.get_xticklabels()
+    plt.setp(labels, rotation=30)
     plt.show()
     plt.save('ha.png')
 
@@ -399,7 +468,7 @@ def collectStats_v2(backgrounds):
     'backgrounds' should given in python list format.
     For each background,
     1. Creates labels using makeLabel
-    2. Merges labels according to the roiDcit using mergeLabel
+    2. Merges labels according to the roiDict using mergeLabel
     3. Estimates cortical thickness in each merged labels (dict)
     4. Converts dict to pandas Dataframe using dictWithTuple2df
     5. save df to freesurfer_dir/tmp/thick_kev_detailed.csv
