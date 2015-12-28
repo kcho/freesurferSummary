@@ -7,14 +7,14 @@ import sys
 import pandas as pd
 #import matplotlib
 #matplotlib.use('GTK')
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import argparse
 import textwrap
 import ccncpy.ccncpy as ccncpy
-from mpltools import style
+#from mpltools import style
 #from mpltools import layout
 
-style.use('ggplot')
+#style.use('ggplot')
 
 def main(subject_loc, backgrounds, roi_list, meanDfLoc,verbose, brain):
     ##########################################################
@@ -88,14 +88,10 @@ def main(subject_loc, backgrounds, roi_list, meanDfLoc,verbose, brain):
     if args.graph:
         if verbose:
             thicknessDf = collectStats_v2([os.path.dirname(freesurfer_dir)])#backgrounds)
-            draw_thickness_detailed(thicknessDf,meanDf,os.path.basename(subject_loc), meanDfName, subject_loc)
+            makeBrainPic(freesurfer_dir, thicknessDf, meanDf)
         else:
             thicknessDf = collectStats([os.path.dirname(freesurfer_dir)])#backgrounds)
-            draw_thickness(thicknessDf,meanDf,os.path.basename(subject_loc), meanDfName, subject_loc)
-
-
-    if brain:
-        makeBrainPic(freesurfer_dir, thicknessDf, meanDf)
+            makeBrainPic(freesurfer_dir, thicknessDf, meanDf)
 
 
     #volumeDf = openStatsTable(freesurfer_dir)
