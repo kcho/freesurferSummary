@@ -597,7 +597,7 @@ def makeLabel(freesurfer_dir):
     for side in ['lh','rh']:
         command = 'mri_annotation2label \
             --subject {basename} \
-            --hemi {side} --outdir {outDir} --ctab {outDir}/ctab.txt 2>/dev/null'.format(basename=os.path.basename(freesurfer_dir),
+            --hemi {side} --outdir {outDir} --ctab {outDir}/{side}_ctab.txt 2>/dev/null'.format(basename=os.path.basename(freesurfer_dir),
                                                     side=side,
                                                     outDir=os.path.join(freesurfer_dir,'tmp'))
         os.popen(re.sub('\s+',' ',command)).read()
