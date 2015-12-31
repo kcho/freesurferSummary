@@ -121,20 +121,45 @@ def cleanMean(meanCSV, indCSV):
                         how='inner')
 
     mergedDf['mean_sub_indv'] = (mergedDf.thickness_x - mergedDf.thickness_y)
-    mergedDf['mean_sub_indv_cov'] =  rescale(mergedDf['mean_sub_indv'])
+    mergedDf['mean_sub_indv_cov'] =  mergedDf['mean_sub_indv']
     return mergedDf
 
-def rescale(npArray, new_min = 70, new_max = 100):
-    values = npArray.tolist()
-    print values
-    output = []
-    old_min, old_max = min(values), max(values)
+#def rescale(npArray, new_min = 70, new_max = 100):
+    #values = npArray.tolist()
+    #print values
+    #output = []
+    #old_min, old_max = min(values), max(values)
 
-    for v in values:
-        new_v = (new_max - new_min) / (old_max - old_min) * (v - old_min) + new_min
-        output.append(new_v)
+    #for v in values:
+        #new_v = (new_max - new_min) / (old_max - old_min) * (v - old_min) + new_min
+        #output.append(new_v)
 
-    return output
+    #return output
+
+def makeAsc(freesurferLoc):
+    for side in ['lh','rh']:
+        thickSurf = os.path.join(freesurferLoc,
+                'surf',side+'.thickness')
+        whiteSurf = os.path.join(freesurferLoc,
+                'surf',side+'.white')
+        output = os.path.join(freesurferLoc,
+                'tmp', side+'.thickness.asc')
+
+        toAsc = fs.MRIsConvert(
+                scalarcurv_file = thickSurf,
+                in_file = whiteSurf,
+                out_datatype = 'ico',
+                #out_file = output,
+                )
+        command = 'mris_convert -c {thickF} {whiteF} {outF}'.format(
+                thickF = thickSurf,
+                whiteF = whiteSurf,
+                outF = output)
+
+        out = os.popen(command).read()
+
+
+
 
 def main(freesurferLoc,indcsv):
     mergedDf = cleanMean('/ccnc_bin/meanThickness/detailed_mean_2015_12_28.csv', indcsv)
@@ -143,20 +168,50 @@ def main(freesurferLoc,indcsv):
     subject_ctab = os.path.join(freesurferLoc,'ctab.txt')
     shutil.copyfile(standard_ctab, subject_ctab)
 
+    makeAsc(freesurferLoc)
 
-    for row in mergedDf.iterrows():
-        roiName = row[1].side + '.' + row[1].roi + '.label'
-        roiLoc = os.path.join(freesurferLoc,
-                'tmp',roiName)
+    # for each side
+    for side in ['lh','rh']:
+        mergedDfSide = mergedDf.groupby('side').get_group(side)
 
-        newNum = row[1].mean_sub_indv
-        ctedit(subject_ctab,
-                row[1].side+'-'+row[1].roi,
-                row[1].mean_sub_indv_cov)
-        #labelValueSwap(roiLoc, row[1].mean_sub_indv)
+        # load thickness ascii file
+        asciiFile = os.path.join(freesurferLoc, 'tmp', side+'.thickness.asc')
+        asciiFileNew = os.path.join(freesurferLoc, 'tmp', 'new.'+side+'.thickness.asc')
+
+        asciiDf = pd.read_csv(asciiFile, sep='\s+')
+        asciiDf.columns = ['vertexNum', 'x','y','z','value']
+        asciiDf.set_index('vertexNum', inplace=True)
+
+        # for each labels
+        for row in mergedDfSide.iterrows():
+            # get locations
+            roiName = row[1].side + '.' + row[1].roi + '.label'
+            roiLoc = os.path.join(freesurferLoc,
+                    'tmp',roiName)
+
+            # get newNumber
+            newNum = row[1].mean_sub_indv
+
+            #ctedit(subject_ctab,
+                    #row[1].side+'-'+row[1].roi,
+                    #row[1].mean_sub_indv_cov)
+
+            # get label df
+            df = pd.read_csv(roiLoc, skiprows=[0,1], sep='\s+')
+            df.columns = ['vertexNum', 'x','y','z','value']
+            df['value'] =  newNum
+            df.set_index('vertexNum', inplace=True)
+
+            #update asciiDf
+            asciiDf.update(df)
+
+            #labelValueSwap(roiLoc, row[1].mean_sub_indv)
+        #asciiDf.index = asciiDf.index.apply(lambda x: x.zfill(15))
+        asciiDf.to_csv(asciiFileNew,sep=' ', header=False)
+
 
     #mergeLabel(freesurferLoc, mergedDf.roi.unique())
-    makeBrainPic(freesurferLoc, 'all', subject_ctab)
+    #makeBrainPic(freesurferLoc, 'all', subject_ctab)
 
 
 if __name__=='__main__':
