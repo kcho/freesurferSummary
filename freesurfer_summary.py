@@ -1,5 +1,4 @@
 from __future__ import division
-#!/ccnc_bin/venv/bin/python
 __author__ = 'kcho'
 import re
 import os
@@ -409,7 +408,7 @@ def draw_thickness_detailed(thicknessDf, meanDf, subjName, meanDfName,subject_lo
     plt.setp(labels, rotation=30)
     labels = lh_g.get_xticklabels()
     plt.setp(labels, rotation=30)
-    #plt.show()
+    plt.show()
     fig.savefig('/ccnc/mri_team/'+subject_loc)
 
 def draw_thickness(thicknessDf,meanDf, subjName, meanDfName, subject_loc):
@@ -554,22 +553,23 @@ def getThickness(freesurfer_dir,roiDict):
                 )
             #print command
 
+            print command
             output=os.popen(re.sub('\s+',' ',command)).read()
 
             #print cortex, rois, '****'*10
-            #print output
+            print output
             thickness = re.search('thickness\s+=\s+(\S+)\s+mm\s+\S+\s+(\S+)', output).group(1,2)
             thickness = tuple([float(x) for x in thickness])
             thicknessDict[side+'_'+cortex] = thickness
             print cortex, thickness
-            try:
-                os.remove('{loc}/{side}_{cortex}'.format(
-                    loc=os.path.join(freesurfer_dir,'tmp'),
-                    side=side,
-                    cortex=cortex
-                ))
-            except:
-                pass
+            #try:
+                #os.remove('{loc}/{side}_{cortex}'.format(
+                    #loc=os.path.join(freesurfer_dir,'tmp'),
+                    #side=side,
+                    #cortex=cortex
+                #))
+            #except:
+                #pass
     return thicknessDict
 
 
@@ -595,6 +595,13 @@ def makeLabel(freesurfer_dir):
     Creates labels in $freesurfer_dir/tmp
     '''
     for side in ['lh','rh']:
+        command = 'mri_annotation2label \
+            --subject {basename} \
+            --hemi {side} --outdir {outDir} 2>/dev/null'.format(basename=os.path.basename(freesurfer_dir),
+                                                    side=side,
+                                                    outDir=os.path.join(freesurfer_dir,'tmp'))
+        os.popen(re.sub('\s+',' ',command)).read()
+
         command = 'mri_annotation2label \
             --subject {basename} \
             --hemi {side} --outdir {outDir} --ctab {outDir}/{side}_ctab.txt 2>/dev/null'.format(basename=os.path.basename(freesurfer_dir),

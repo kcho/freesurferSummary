@@ -5,9 +5,10 @@ from nilearn import datasets
 from nilearn import plotting
 import nipype.interfaces.freesurfer as fs          # fsl
 import pandas as pd
+pd.set_option('max_rows', 5000)
 
 def labelValueSwap(labelLoc, newNum):
-    print labelLoc
+    #print labelLoc
     with open(labelLoc, 'r') as f:
         lines = f.read()
 
@@ -16,10 +17,25 @@ def labelValueSwap(labelLoc, newNum):
     newName = os.path.dirname(labelLoc)+'/' +\
             os.path.basename(labelLoc)[:-6] + \
             '_new.label'
-    print newName
+    #print newName
     with open(newName, 'w') as newF:
         newF.write(newLines)
 
+
+def tclWrite(location, thicknessAsc):
+    toWrite = '''set curv {thicknessAsc}
+read_binary_curv
+curv_to_val
+set overlayflag 1
+#set fthresh .001
+#set fmid .2
+sclv_set_current_threshold_from_percentile .92 .93 .99
+set colscalebarflag 1
+set curvflag 0
+UpdateAndRedraw'''.format(thicknessAsc = thicknessAsc)
+
+    with open(location, 'w') as f:
+        f.write(toWrite)
 
 def ctedit(ctab, labelName, newNum):
     with open(ctab, 'r') as f:
@@ -50,38 +66,29 @@ def ctedit(ctab, labelName, newNum):
             f.write(line)
 
 
-def makeBrainPic(freesurfer_dir, label, ctab):
-    bgBrain = os.path.join(freesurfer_dir,'mri/brain.mgz')
-    bgBrainNii = os.path.dirname(bgBrain) + 'brain.nii.gz'
-
-    #converter = fs.MRIConvert(backgroundin_file = bgBrain,
-            #out_type='niigz',
-            #out_file=bgBrainNii)
-    #converter.run()
-
+def makeBrainPic(freesurfer_dir):
     for side in ['lh','rh']:
-        labelName = os.path.join(freesurfer_dir,
-                'tmp',
-                side+'_all.label')
+        tcl_script = os.path.join(freesurfer_dir,
+                'tmp',side+'_tksurfer.tcl')
         #annotFile = os.path.join(freesurfer_dir,
                 #'mri/aparc+aseg.mgz')
-        annotFile = os.path.join(freesurfer_dir,
-                'label/{side}.aparc.annot'.format(side=side))
 
 
+        #print os.path.dirname(freesurfer_dir)
         shots = fs.SurfaceSnapshots(
                 subject_id=os.path.basename(freesurfer_dir),
                 subjects_dir=os.path.dirname(freesurfer_dir),
                 hemi=side,
-                label_file = labelName,
-                #label_file = annotFile,
+                tcl_script=tcl_script,
                 #annot_file = annotFile, 
-                colortable = ctab,
                 #overlay_range = (-4,4),
                 #screenshot_stem = freesurfer_dir+'_'+side,
-                six_images = True,
-                surface="pial")
+                #six_images = True,
+                surface="inflated")
+        #print shots.cmdline
+        print '*'*80
         res = shots.run()
+
         createdList = res.outputs.snapshots
         for img in createdList:
             shutil.move(img, '/ccnc/'+os.path.basename(img))
@@ -96,7 +103,7 @@ def mergeLabel(freesurfer_dir, labelNames):
             inLabel = ' '.join(['-i '+os.path.join(freesurfer_dir,'tmp',side+'.'+x+'_new.label') for x in labelNames]),
             outLabel = os.path.join(freesurfer_dir,'tmp',side+'_all.label'))
 
-        print command
+        #print command
         os.popen(command).read()
 
 
@@ -120,7 +127,8 @@ def cleanMean(meanCSV, indCSV):
                         on=['roi','side'],
                         how='inner')
 
-    mergedDf['mean_sub_indv'] = (mergedDf.thickness_x - mergedDf.thickness_y)
+    # individual subject thickness - mean thickness
+    mergedDf['mean_sub_indv'] = (mergedDf.thickness_y - mergedDf.thickness_x)
     mergedDf['mean_sub_indv_cov'] =  mergedDf['mean_sub_indv']
     return mergedDf
 
@@ -181,8 +189,10 @@ def main(freesurferLoc,indcsv):
         asciiDf = pd.read_csv(asciiFile, sep='\s+')
         asciiDf.columns = ['vertexNum', 'x','y','z','value']
         asciiDf.set_index('vertexNum', inplace=True)
+        asciiDf['value'] = 0
 
         # for each labels
+        #print mergedDf
         for row in mergedDfSide.iterrows():
             # get locations
             roiName = row[1].side + '.' + row[1].roi + '.label'
@@ -192,29 +202,32 @@ def main(freesurferLoc,indcsv):
             # get newNumber
             newNum = row[1].mean_sub_indv
 
-            #ctedit(subject_ctab,
-                    #row[1].side+'-'+row[1].roi,
-                    #row[1].mean_sub_indv_cov)
-
             # get label df
             df = pd.read_csv(roiLoc, skiprows=[0,1], sep='\s+')
             df.columns = ['vertexNum', 'x','y','z','value']
-            df['value'] =  newNum
+            df['value'] = newNum
+            #print df[df['value'] != 0]
+
             df.set_index('vertexNum', inplace=True)
 
             #update asciiDf
             asciiDf.update(df)
 
+            df.roi = row[1].roi
+
             #labelValueSwap(roiLoc, row[1].mean_sub_indv)
         #asciiDf.index = asciiDf.index.apply(lambda x: x.zfill(15))
         asciiDf.to_csv(asciiFileNew,sep=' ', header=False)
+        tclWrite(os.path.join(freesurferLoc,'tmp','{side}_tksurfer.tcl'.format(side=side)),
+                asciiFileNew)
 
 
     #mergeLabel(freesurferLoc, mergedDf.roi.unique())
-    #makeBrainPic(freesurferLoc, 'all', subject_ctab)
+    makeBrainPic(freesurferLoc)
+
 
 
 if __name__=='__main__':
-    main('/Volumes/CCNC_3T_2/kcho/ccnc/GHR_project/NOR04_JJW/FREESURFER',
-            '/Volumes/CCNC_3T_2/kcho/ccnc/GHR_project/NOR04_JJW/FREESURFER/tmp/thick_kev_detailed.csv')
+    main('/Volumes/promise/CCNC_MRI_3T/NOR/NOR103_SHS/baseline/FREESURFER',
+            '/Volumes/promise/CCNC_MRI_3T/NOR/NOR103_SHS/baseline/FREESURFER/tmp/thick_kev_detailed.csv')
 
