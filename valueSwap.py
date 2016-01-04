@@ -23,7 +23,9 @@ def labelValueSwap(labelLoc, newNum):
 
 
 def tclWrite(location, thicknessAsc):
+
     toWrite = '''set curv {thicknessAsc}
+set tiff_directory {directory}
 read_binary_curv
 curv_to_val
 set overlayflag 1
@@ -32,7 +34,23 @@ set overlayflag 1
 sclv_set_current_threshold_from_percentile .92 .93 .99
 set colscalebarflag 1
 set curvflag 0
-UpdateAndRedraw'''.format(thicknessAsc = thicknessAsc)
+UpdateAndRedraw
+redraw
+make_lateral_view
+save_tiff lateral.tif
+
+rotate_brain_x 90
+redraw
+save_tiff inferior.tif
+
+make_lateral_view
+rotate_brain_y 180 
+redraw
+save_tiff medial.tif
+
+# will cause FS to exit
+exit 0'''.format(thicknessAsc = thicknessAsc, 
+        directory = os.path.dirname(thicknessAsc),)
 
     with open(location, 'w') as f:
         f.write(toWrite)
@@ -83,15 +101,22 @@ def makeBrainPic(freesurfer_dir):
                 #annot_file = annotFile, 
                 #overlay_range = (-4,4),
                 #screenshot_stem = freesurfer_dir+'_'+side,
-                #six_images = True,
+                six_images = True,
                 surface="inflated")
-        #print shots.cmdline
+        os.environ["SUBJECTS_DIR"] = os.path.dirname(freesurfer_dir)
+        print shots.cmdline
+        print "export SUBJECTS_DIR={0}".format(os.path.dirname(freesurfer_dir))
+        #os.popen(shots.cmdline).read()
         print '*'*80
-        res = shots.run()
+        try:
+            res = shots.run()
 
-        createdList = res.outputs.snapshots
+        except:
+            pass
+        createdList = [side+'_'+x+'.tif' for x in ["inferior", "lateral", "medial"]]
         for img in createdList:
-            shutil.move(img, '/ccnc/'+os.path.basename(img))
+            print img
+            shutil.move(img.split('_')[1], '/ccnc/'+os.path.basename(img))
 
 
 
@@ -228,6 +253,6 @@ def main(freesurferLoc,indcsv):
 
 
 if __name__=='__main__':
-    main('/Volumes/promise/CCNC_MRI_3T/NOR/NOR103_SHS/baseline/FREESURFER',
-            '/Volumes/promise/CCNC_MRI_3T/NOR/NOR103_SHS/baseline/FREESURFER/tmp/thick_kev_detailed.csv')
+    main('/Volumes/CCNC_3T_2/kcho/ccnc/GHR_project/NOR04_JJW/FREESURFER',
+            '/Volumes/CCNC_3T_2/kcho/ccnc/GHR_project/NOR04_JJW/FREESURFER/tmp/thick_kev_detailed.csv')
 
