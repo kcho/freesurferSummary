@@ -11,4 +11,12 @@ make_lateral_view
 rotate_brain_x -90
 redraw
 save_tiff $env(_SNAPSHOT_STEM)-dor.tif
+make_lateral_view
+rotate_brain_y 90
+redraw
+save_tiff $env(_SNAPSHOT_STEM)-pos.tif
+make_lateral_view
+rotate_brain_y -90
+redraw
+save_tiff $env(_SNAPSHOT_STEM)-ant.tif
 exit

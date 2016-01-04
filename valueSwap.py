@@ -104,19 +104,27 @@ def makeBrainPic(freesurfer_dir):
                 six_images = True,
                 surface="inflated")
         os.environ["SUBJECTS_DIR"] = os.path.dirname(freesurfer_dir)
-        print shots.cmdline
-        print "export SUBJECTS_DIR={0}".format(os.path.dirname(freesurfer_dir))
-        #os.popen(shots.cmdline).read()
-        print '*'*80
-        try:
-            res = shots.run()
+        #print shots.cmdline
+        #print "export SUBJECTS_DIR={0}".format(os.path.dirname(freesurfer_dir))
+        os.popen(shots.cmdline).read()
+        #print '*'*80
+        #try:
+            ##res = shots.run()
+            #pass
 
-        except:
-            pass
+        #except:
+            #pass
+
         createdList = [side+'_'+x+'.tif' for x in ["inferior", "lateral", "medial"]]
         for img in createdList:
-            print img
-            shutil.move(img.split('_')[1], '/ccnc/'+os.path.basename(img))
+            #print img
+            if 'baseline' in freesurfer_dir:
+                folderName = os.path.dirname(freesurfer_dir).split('/baseline')[0]
+            else:
+                folderName = os.path.dirname(freesurfer_dir)
+            shutil.move(img.split('_')[1], 
+                    os.path.join('/ccnc/mri_team/',
+                        folderName + '_' + os.path.basename(img)))
 
 
 
@@ -253,6 +261,6 @@ def main(freesurferLoc,indcsv):
 
 
 if __name__=='__main__':
-    main('/Volumes/CCNC_3T_2/kcho/ccnc/GHR_project/NOR04_JJW/FREESURFER',
-            '/Volumes/CCNC_3T_2/kcho/ccnc/GHR_project/NOR04_JJW/FREESURFER/tmp/thick_kev_detailed.csv')
+    main('/Volumes/promise/CCNC_MRI_3T/NOR/NOR103_SHS/baseline/FREESURFER',
+            '/Volumes/promise/CCNC_MRI_3T/NOR/NOR103_SHS/baseline/FREESURFER/tmp/thick_kev_detailed.csv')
 

@@ -1,3 +1,4 @@
+#!/ccnc_bin/mini_env/bin/python
 from __future__ import division
 __author__ = 'kcho'
 import re
@@ -8,6 +9,7 @@ import pandas as pd
 #matplotlib.use('GTK')
 import matplotlib.pyplot as plt
 import argparse
+import valueSwap
 import textwrap
 import ccncpy.ccncpy as ccncpy
 from mpltools import style
@@ -94,8 +96,17 @@ def main(subject_loc, backgrounds, roi_list, meanDfLoc,verbose, brain):
 
 
     if brain:
-        makeBrainPic(freesurfer_dir, thicknessDf, meanDf)
+        if verbose:
+            valueSwap.main(freesurfer_dir, 
+                    os.path.join(freesurfer_dir,
+                        'tmp/thick_kev_detailed.csv'))
+        else:
+            print 'Please select verbose mode'
+            pass
 
+    print "*"*80
+    print 'Outputs are saved in /ccnc/mri_team'
+    print "*"*80
 
     #volumeDf = openStatsTable(freesurfer_dir)
     #volumeDf['name'] = volumeDf.side + '_' + volumeDf.ROI
@@ -114,74 +125,6 @@ def main(subject_loc, backgrounds, roi_list, meanDfLoc,verbose, brain):
     #for roi in roi_list:
     #    print freesurfer_table[roi]
 
-def makeBrainPic(freesurfer_dir, thicknessDf, meanDf):
-    from nilearn import datasets
-    from nilearn import plotting
-    import nipype.interfaces.freesurfer as fs          # fsl
-
-
-    bgBrain = os.path.join(freesurfer_dir,'mri/brain.mgz')
-    bgBrainNii = os.path.dirname(bgBrain) + 'brain.nii.gz'
-
-    #converter = fs.MRIConvert(backgroundin_file = bgBrain,
-            #out_type='niigz',
-            #out_file=bgBrainNii)
-    #converter.run()
-
-    thicknessDf['roi'] = thicknessDf.subroi.str[3:]
-    thicknessDf['side'] = thicknessDf.subroi.str[:2]
-    thicknessDf['region'] = thicknessDf.roi.apply(getRegion)
-    print thicknessDf.head()
-    meanDf['roi'] = meanDf.subroi.str[3:]
-    meanDf['side'] = meanDf.subroi.str[:2]
-    meanDf = meanDf.groupby(['roi','side']).mean().reset_index()
-    meanDf['region'] = meanDf.roi.apply(getRegion)
-    print meanDf
-
-    gb = thicknessDf.groupby('region')
-    thicknessDf = pd.concat([gb.get_group('LPFC'),
-                        gb.get_group('OFC'),
-                        gb.get_group('MPFC'),
-                        gb.get_group('LTC'),
-                        gb.get_group('MTC'),
-                        gb.get_group('SMC'),
-                        gb.get_group('PC'),
-                        gb.get_group('OCC')])
-
-    gbmean = meanDf.groupby('region')
-    meanDf = pd.concat([gbmean.get_group('LPFC'),
-                        gbmean.get_group('OFC'),
-                        gbmean.get_group('MPFC'),
-                        gbmean.get_group('LTC'),
-                        gbmean.get_group('MTC'),
-                        gbmean.get_group('SMC'),
-                        gbmean.get_group('PC'),
-                        gbmean.get_group('OCC')])
-                        
-    gb = thicknessDf.groupby('side')
-    label = thicknessDf.subroi.str[3:].unique()
-    ## annotation
-    mergedDf = pd.merge(meanDf.groupby('side').get_group('lh'),
-                        gb.get_group('lh'),
-                        on=['roi','side','region'],
-                        how='inner')
-
-    mergedDf['mean_sub_indv'] = mergedDf.thickness_x - mergedDf.thickness_y
-
-
-    for side in ['lh','rh']:
-        sideMerged = mergedDf.groupby('side').get_group(side)
-
-        for row in sideMerged.iterrows():
-            print row
-
-        #shots = fs.SurfaceSnapshots(subject_id=os.path.basename(freesurfer_dir),
-                #hemi=side,
-                #surface="pial")
-        #shots.inputs.overlay
-    
-
-
 
 def draw_thickness_detailed(thicknessDf, meanDf, subjName, meanDfName,subject_loc):
     roiOrder = ['LPFC', 'OFC', 'MPFC', 'LTC', 'MTC', 'SMC', 'PC', 'OCC']
@@ -195,12 +138,10 @@ def draw_thickness_detailed(thicknessDf, meanDf, subjName, meanDfName,subject_lo
     thicknessDf['roi'] = thicknessDf.subroi.str[3:]
     thicknessDf['side'] = thicknessDf.subroi.str[:2]
     thicknessDf['region'] = thicknessDf.roi.apply(getRegion)
-    print thicknessDf.head()
     meanDf['roi'] = meanDf.subroi.str[3:]
     meanDf['side'] = meanDf.subroi.str[:2]
     meanDf = meanDf.groupby(['roi','side']).mean().reset_index()
     meanDf['region'] = meanDf.roi.apply(getRegion)
-    print meanDf
 
     gb = thicknessDf.groupby('region')
     thicknessDf = pd.concat([gb.get_group('LPFC'),
@@ -299,9 +240,7 @@ def draw_thickness_detailed(thicknessDf, meanDf, subjName, meanDfName,subject_lo
                         how='inner')
 
     mergedDf['mean_sub_indv'] = mergedDf.thickness_x - mergedDf.thickness_y
-    print mergedDf[abs(mergedDf['mean_sub_indv']) > 0.5]
     for row in mergedDf[abs(mergedDf['mean_sub_indv']) > 0.5].iterrows():
-        print row
         #lh_g.text(row[0], row[1].thickness_y - row[1].mean_sub_indv/2,
                 #row[1].roi,
                 #horizontalalignment='center',
@@ -381,9 +320,7 @@ def draw_thickness_detailed(thicknessDf, meanDf, subjName, meanDfName,subject_lo
                         how='inner')
 
     mergedDf['mean_sub_indv'] = mergedDf.thickness_x - mergedDf.thickness_y
-    print mergedDf[abs(mergedDf['mean_sub_indv']) > 0.5]
     for row in mergedDf[abs(mergedDf['mean_sub_indv']) > 0.5].iterrows():
-        print row
         #rh_g.text(row[0], row[1].thickness_y - row[1].mean_sub_indv/2,
                 #row[1].roi,
                 #horizontalalignment='center',
@@ -408,7 +345,7 @@ def draw_thickness_detailed(thicknessDf, meanDf, subjName, meanDfName,subject_lo
     plt.setp(labels, rotation=30)
     labels = lh_g.get_xticklabels()
     plt.setp(labels, rotation=30)
-    plt.show()
+    #plt.show()
     fig.savefig('/ccnc/mri_team/'+subject_loc)
 
 def draw_thickness(thicknessDf,meanDf, subjName, meanDfName, subject_loc):
@@ -455,7 +392,6 @@ def draw_thickness(thicknessDf,meanDf, subjName, meanDfName, subject_loc):
     lh_g.plot(meanDf.groupby('side').get_group('lh')['thickness'],'r--',label=meanDfName)
 
     # error bar
-    print meanDf.groupby('side').get_group('lh')['std']
 
     eb1 = lh_g.errorbar(range(len(meanDf.roi.unique())),
                         meanDf.groupby('side').get_group('lh')['thickness'],
@@ -495,7 +431,6 @@ def draw_thickness(thicknessDf,meanDf, subjName, meanDfName, subject_loc):
     xticksNum = range(8)
 
     #rh_g.set_xticklabels(label)
-    print label
     rh_g.set_xlabel('Right', fontsize=16)
     rh_g.set_ylim(1, 4)
     rh_g.set_xlim(-.5, 7.5)
@@ -517,12 +452,11 @@ def draw_thickness(thicknessDf,meanDf, subjName, meanDfName, subject_loc):
     ##frame.set_color('white')
     #frame.set_facecolor('white')
     ##frame.set_edgecolor('red')
-    plt.show()
+    #plt.show()
     plt.savefig('/ccnc/mri_team/'+subject_loc)
 
 
 def dictWithTuple2df(thicknessDict):
-    print thicknessDict
     df = pd.DataFrame.from_dict(thicknessDict)
     df = df.stack().reset_index()
     df = df[df.level_0==0].merge(df[df.level_0==1], on='level_1', how='inner')
@@ -551,13 +485,9 @@ def getThickness(freesurfer_dir,roiDict):
                     side=side,
                     cortex=cortex
                 )
-            #print command
 
-            print command
             output=os.popen(re.sub('\s+',' ',command)).read()
 
-            #print cortex, rois, '****'*10
-            print output
             thickness = re.search('thickness\s+=\s+(\S+)\s+mm\s+\S+\s+(\S+)', output).group(1,2)
             thickness = tuple([float(x) for x in thickness])
             thicknessDict[side+'_'+cortex] = thickness
@@ -632,7 +562,6 @@ def collectStats_v2(backgrounds):
         # freesurfer sub-directory description
         FS_description= ['bem','mri','scripts','src','stats','surf','tmp']
         freesurfer_dir = ccncpy.subDirSearch(FS_description, background)
-        print freesurfer_dir
 
         if len(freesurfer_dir) > 1:
             sys.exit(re.sub('\s+',' ',
@@ -683,7 +612,6 @@ def collectStats(backgrounds):
         # freesurfer sub-directory description
         FS_description= ['bem','mri','scripts','src','stats','surf','tmp']
         freesurfer_dir = ccncpy.subDirSearch(FS_description, background)
-        print freesurfer_dir
 
         if len(freesurfer_dir) > 1:
             sys.exit(re.sub('\s+',' ',
@@ -726,7 +654,6 @@ def draw_graph(volumeDf):
         else:
             rh_volume_sums[side+'_'+cortex] = grp['Volume'].sum()
 
-    print rh_volume_sums
     plt.plot(lh_volume_sums.values(),'r')
     plt.plot(rh_volume_sums.values(),'b')
     plt.xticks(range(len(cortexList)), cortexList)
@@ -835,7 +762,6 @@ def roi_extraction(subjectDir, roiName, roiNumber=False, outputDir=False):
 
     command = re.sub('\s+',' ',command)
     output = os.popen(command).read()
-    print output
 
 
 def get_cortical_rois():
@@ -874,7 +800,6 @@ def get_cortical_rois_detailed():
     for roi in detailed:
         detailed_ROIs[roi] = [roi]
 
-    print detailed_ROIs
     return detailed_ROIs
 
 if __name__ == '__main__':
@@ -904,7 +829,6 @@ if __name__ == '__main__':
         help='backround subject inputs eg)-l subj1 subj2 subj3')
         #default=[x for x in os.listdir(os.getcwd()) if os.path.isdir(x)])
 
-
     parser.add_argument(
         '-r', '--rois',
         help='roi inputs in python list format',
@@ -913,24 +837,27 @@ if __name__ == '__main__':
     parser.add_argument(
         '-g', '--graph',
         help='Draw graph',
+        default=True,
         action='store_true')
 
     parser.add_argument(
         '-m', '--meanDf',
         help='meanDf',
-
+        default=True,
         action='store_true')
         #default = '/ccnc_bin/meanThickness/mean_thickness.csv')
 
     parser.add_argument(
         '-v', '--verbose',
         help='Use detailed ROIs',
+        default=True,
         action='store_true')
         #default = '/ccnc_bin/meanThickness/mean_thickness.csv')
 
     parser.add_argument(
         '-p', '--brain',
         help='make brain picture',
+        default=True,
         action='store_true')
 
     args = parser.parse_args()
