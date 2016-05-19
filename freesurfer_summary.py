@@ -17,7 +17,7 @@ import ccncpy.ccncpy as ccncpy
 print 'haha'
 plt.style.use('ggplot')
 
-def main(subject_loc, backgrounds, roi_list, meanDfLoc,verbose, brain):
+def main(subject_loc, backgrounds, roi_list, graph, meanDfLoc,verbose, brain):
     ##########################################################
     # Find freesurfer dir
     ##########################################################
@@ -862,4 +862,4 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    main(args.inputDir, args.backgrounds, args.rois, args.meanDf, args.verbose, args.brain)
+    main(args.inputDir, args.backgrounds, args.rois, args.graph, args.meanDf, args.verbose, args.brain)
