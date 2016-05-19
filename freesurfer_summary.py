@@ -12,10 +12,10 @@ import argparse
 import valueSwap
 import textwrap
 import ccncpy.ccncpy as ccncpy
-from mpltools import style
-#from mpltools import layout
 
-style.use('ggplot')
+#style.use('ggplot')
+print 'haha'
+plt.style.use('ggplot')
 
 def main(subject_loc, backgrounds, roi_list, meanDfLoc,verbose, brain):
     ##########################################################
@@ -86,7 +86,7 @@ def main(subject_loc, backgrounds, roi_list, meanDfLoc,verbose, brain):
     # annotation2label --> merge labels --> freesurfer/tmp
     ##########################################################
     
-    if args.graph:
+    if graph:
         if verbose:
             thicknessDf = collectStats_v2([os.path.dirname(freesurfer_dir)])#backgrounds)
             draw_thickness_detailed(thicknessDf,meanDf,os.path.basename(subject_loc), meanDfName, subject_loc)
