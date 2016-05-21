@@ -1,3 +1,5 @@
+#!/ccnc_bin/mini_env/bin/python
+from __future__ import division
 __author__ = 'kcho'
 import os
 import re
@@ -174,4 +176,8 @@ if __name__ == '__main__':
     df = openStatsTable_big(args.freesurferDir)
     print df
     fig = graph_ind(df, args.index)
-    plt.show()
+    fig.savefig('fig.png')
+    #plt.show()
+
+
+
