@@ -47,7 +47,6 @@ def openStatsTable_big(freesurfer_dir):
     '''
     df = openStatsTable(freesurfer_dir)
     roi_region_map = get_roi_region_map()
-    print roi_region_map
     df['region'] = df['roi'].map(roi_region_map)
     df.loc[df['region'].isnull(), 'region'] = 'other'
 
@@ -161,8 +160,20 @@ if __name__ == '__main__':
         default='grayvol')
 
     parser.add_argument(
+        '-d', '--dataframe',
+        help='Print dataframe',
+        action='store_true',
+        default=False)
+
+    parser.add_argument(
+        '-g', '--graph',
+        help='Draw graph',
+        action='store_true',
+        default=False)
+
+    parser.add_argument(
         '-v', '--ICV',
-        help='Add this option if ICV is needed',
+        help='print ICV',
         action='store_true',
         default=True)
 
@@ -174,9 +185,13 @@ if __name__ == '__main__':
         print getICV(args.freesurferDir)
 
     df = openStatsTable_big(args.freesurferDir)
-    print df
-    fig = graph_ind(df, args.index)
-    fig.savefig('fig.png')
+
+    if args.dataframe:
+        print df[['roi','region',args.index]]
+
+    if args.graph:
+        fig = graph_ind(df, args.index)
+        fig.savefig('fig.png')
     #plt.show()
 
 
