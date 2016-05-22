@@ -14,7 +14,6 @@ import textwrap
 import ccncpy.ccncpy as ccncpy
 
 #style.use('ggplot')
-print 'haha'
 plt.style.use('ggplot')
 
 def main(subject_loc, backgrounds, roi_list, graph, meanDfLoc,verbose, brain):
@@ -23,6 +22,7 @@ def main(subject_loc, backgrounds, roi_list, graph, meanDfLoc,verbose, brain):
     ##########################################################
     FS_description= ['bem','mri','scripts',
                      'src','stats','surf','tmp']
+    
     freesurfer_dir = ccncpy.subDirSearch(FS_description, 
                                          subject_loc)
 
@@ -346,7 +346,7 @@ def draw_thickness_detailed(thicknessDf, meanDf, subjName, meanDfName,subject_lo
     labels = lh_g.get_xticklabels()
     plt.setp(labels, rotation=30)
     #plt.show()
-    fig.savefig('/ccnc/mri_team/'+subject_loc)
+    fig.savefig('/ccnc/mri_team/'+os.path.basename(subject_loc))
 
 def draw_thickness(thicknessDf,meanDf, subjName, meanDfName, subject_loc):
     thicknessDf['roi'] = thicknessDf.subroi.str[3:]

@@ -122,9 +122,10 @@ def makeBrainPic(freesurfer_dir):
                 folderName = os.path.dirname(freesurfer_dir).split('/baseline')[0]
             else:
                 folderName = os.path.dirname(freesurfer_dir)
+
             shutil.move(img.split('_')[1], 
                     os.path.join('/ccnc/mri_team/',
-                        folderName + '_' + os.path.basename(img)))
+                        os.path.basename(folderName) + '_' + os.path.basename(img)))
 
 
 
