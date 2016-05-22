@@ -5,15 +5,12 @@ import re
 import os
 import sys
 import pandas as pd
-#import matplotlib
-#matplotlib.use('GTK')
 import matplotlib.pyplot as plt
 import argparse
 import valueSwap
 import textwrap
 import ccncpy.ccncpy as ccncpy
 
-#style.use('ggplot')
 plt.style.use('ggplot')
 
 def main(subject_loc, backgrounds, roi_list, graph, meanDfLoc,verbose, brain):
@@ -40,7 +37,6 @@ def main(subject_loc, backgrounds, roi_list, graph, meanDfLoc,verbose, brain):
     # Freesurfer setting
     ##########################################################
     os.environ["FREESURFER_HOME"] = '/Applications/freesurfer'
-    # where is the freesurfer directory
     os.environ["SUBJECTS_DIR"] = '{0}'.format(os.path.dirname(freesurfer_dir))
 
     ##########################################################
@@ -109,23 +105,6 @@ def main(subject_loc, backgrounds, roi_list, graph, meanDfLoc,verbose, brain):
     print 'Outputs are saved in /ccnc/mri_team'
     print "*"*80
 
-    #volumeDf = openStatsTable(freesurfer_dir)
-    #volumeDf['name'] = volumeDf.side + '_' + volumeDf.ROI
-
-    #volumeDf = getSummary(volumeDf,roiDict)
-    #print volumeDf
-    # graph
-    #draw_graph(volumeDf)
-
-
-
-
-    #freesurfer_table = openTable('/Applications/freesurfer/FreeSurferColorLUT.txt')
-    #print freesurfer_table
-
-    #for roi in roi_list:
-    #    print freesurfer_table[roi]
-
 
 def draw_thickness_detailed(thicknessDf, meanDf, subjName, meanDfName,subject_loc):
     roiOrder = ['LPFC', 'OFC', 'MPFC', 'LTC', 'MTC', 'SMC', 'PC', 'OCC']
@@ -169,15 +148,9 @@ def draw_thickness_detailed(thicknessDf, meanDf, subjName, meanDfName,subject_lo
 
     fig = plt.figure(figsize=(22,12))
     fig.suptitle("Cortical thickness in all regions", fontsize=20)
-    #fig.set_ylabel('Cortical thickness in mm', fontsize=16)
-
-    #plt.ylabel('Cortical thickness', fontsize=16)
-    #plt.xticks(range(len(label)), label)
 
     lh_g = plt.subplot2grid((2,2),(0, 0), colspan=2)
     rh_g = plt.subplot2grid((2,2),(1, 0), colspan=2)
-    #ax1 = fig.add_subplot(211)
-    #ax2 = fig.add_subplot(212)
     lh_g.plot(gb.get_group('lh')['thickness'],'r',label=subjName)
 
     lh_g.plot(meanDf.groupby('side').get_group('lh')['thickness'],'r--',label=meanDfName)
@@ -192,7 +165,7 @@ def draw_thickness_detailed(thicknessDf, meanDf, subjName, meanDfName,subject_lo
     eb1[-1][0].set_linestyle('--')
 
     lh_g.set_xlabel('Left', fontsize=16)
-    #lh_g.set_ylabel('Cortical thickness in mm', fontsize=16)
+
     lh_g.set_ylim(1.0, 4.7)
 
     lh_g.set_xticks(range(len(label)))
@@ -242,10 +215,6 @@ def draw_thickness_detailed(thicknessDf, meanDf, subjName, meanDfName,subject_lo
 
     mergedDf['mean_sub_indv'] = mergedDf.thickness_x - mergedDf.thickness_y
     for row in mergedDf[abs(mergedDf['mean_sub_indv']) > 0.5].iterrows():
-        #lh_g.text(row[0], row[1].thickness_y - row[1].mean_sub_indv/2,
-                #row[1].roi,
-                #horizontalalignment='center',
-                #fontsize=20)
         lh_g.annotate(row[1].roi,
                 xy=(row[0], row[1].thickness_y),
                 xytext=(row[0], 1.5-row[1].mean_sub_indv/3),
@@ -322,10 +291,6 @@ def draw_thickness_detailed(thicknessDf, meanDf, subjName, meanDfName,subject_lo
 
     mergedDf['mean_sub_indv'] = mergedDf.thickness_x - mergedDf.thickness_y
     for row in mergedDf[abs(mergedDf['mean_sub_indv']) > 0.5].iterrows():
-        #rh_g.text(row[0], row[1].thickness_y - row[1].mean_sub_indv/2,
-                #row[1].roi,
-                #horizontalalignment='center',
-                #fontsize=20)
         rh_g.annotate(row[1].roi,
                 xy=(row[0], row[1].thickness_y),
                 xytext=(row[0], 1.5-row[1].mean_sub_indv/3),
@@ -333,20 +298,13 @@ def draw_thickness_detailed(thicknessDf, meanDf, subjName, meanDfName,subject_lo
                 horizontalalignment='left',
                 fontsize=20)
 
-    #plt.tight_layout()
     plt.tight_layout(pad=7, w_pad=3, h_pad=0.2)
 
 
-    #legend = plt.legend(frameon = 1)
-    #frame = legend.get_frame()
-    ##frame.set_color('white')
-    #frame.set_facecolor('white')
-    ##frame.set_edgecolor('red')
     labels = rh_g.get_xticklabels()
     plt.setp(labels, rotation=30)
     labels = lh_g.get_xticklabels()
     plt.setp(labels, rotation=30)
-    #plt.show()
     fig.savefig('/ccnc/mri_team/'+os.path.basename(subject_loc))
 
 def draw_thickness(thicknessDf,meanDf, subjName, meanDfName, subject_loc):
@@ -381,13 +339,9 @@ def draw_thickness(thicknessDf,meanDf, subjName, meanDfName, subject_loc):
 
     fig = plt.figure(figsize=(12,8))
     fig.suptitle("Cortical thickness in eight regions", fontsize=20)
-    #plt.ylabel('Cortical thickness', fontsize=16)
-    #plt.xticks(range(len(label)), label)
 
     lh_g = plt.subplot2grid((2,2),(0, 0), rowspan=2)
     rh_g = plt.subplot2grid((2,2),(0, 1), rowspan=2)
-    #ax1 = fig.add_subplot(211)
-    #ax2 = fig.add_subplot(212)
     lh_g.plot(gb.get_group('lh')['thickness'],'r',label=subjName)
 
     lh_g.plot(meanDf.groupby('side').get_group('lh')['thickness'],'r--',label=meanDfName)
@@ -444,16 +398,6 @@ def draw_thickness(thicknessDf,meanDf, subjName, meanDfName, subject_loc):
     frame = legend.get_frame()
     frame.set_facecolor('white')
 
-    #plt.tight_layout()
-    #plt.tight_layout(pad=2, w_pad=2, h_pad=20)
-
-
-    #legend = plt.legend(frameon = 1)
-    #frame = legend.get_frame()
-    ##frame.set_color('white')
-    #frame.set_facecolor('white')
-    ##frame.set_edgecolor('red')
-    #plt.show()
     plt.savefig('/ccnc/mri_team/'+subject_loc)
 
 
@@ -493,14 +437,6 @@ def getThickness(freesurfer_dir,roiDict):
             thickness = tuple([float(x) for x in thickness])
             thicknessDict[side+'_'+cortex] = thickness
             print cortex, thickness
-            #try:
-                #os.remove('{loc}/{side}_{cortex}'.format(
-                    #loc=os.path.join(freesurfer_dir,'tmp'),
-                    #side=side,
-                    #cortex=cortex
-                #))
-            #except:
-                #pass
     return thicknessDict
 
 
@@ -511,13 +447,6 @@ def mergeLabel(freesurfer_dir, roiDict):
                 inLabel = ' '.join(['-i '+os.path.join(freesurfer_dir,'tmp',side+'.'+x+'.label') for x in rois]),
                 outLabel = os.path.join(freesurfer_dir,'tmp',side+'_'+cortex))
             os.popen(command).read()
-
-            #for roi in [os.path.join(freesurfer_dir,'tmp',side+'.'+x+'.label') for x in rois]:
-                #print roi
-                #try:
-                    #os.remove(roi)
-                #except:
-                    #pass
 
 
 def makeLabel(freesurfer_dir):
@@ -659,16 +588,10 @@ def draw_graph(volumeDf):
     plt.plot(rh_volume_sums.values(),'b')
     plt.xticks(range(len(cortexList)), cortexList)
     plt.show()
-    # plt.plot(gb.get_group('lh')['Volume'],'r-')
-    # plt.plot(gb.get_group('rh')['Volume'],'b-')
-    # plt.xticks(range(len(gb.get_group('lh')['ROI'])),gb.get_group('lh')['ROI'])
-    # plt.show()
 
 def getSummary(volumeDf,roiDict):
     # thalamus : lh, 10, rh, 49
     # lh_OFC : 1019 1014 1012
-
-
     columnMake = pd.DataFrame.from_dict(roiDict,orient='index').T.stack().reset_index()
     columnMake.columns = ['order','cortex','subroi']
 
@@ -679,13 +602,6 @@ def getSummary(volumeDf,roiDict):
              how='inner').drop('subroi',axis=1)
 
     return volumeDf
-
-
-
-#    ts = pd.Series(np.random.randn(1000), index=pd.date_range('1/1/2000', periods=1000))
-#    ts = ts.cumsum()
-#    plt.figure(); ts.plot();plt.show()
-
 
 def openStatsTable(freesurfer_dir):
     statsROI = os.path.join(freesurfer_dir,'stats')
@@ -818,11 +734,6 @@ if __name__ == '__main__':
         '-i', '--inputDir',
         help='Subject location',
         default=os.getcwd())
-
-    #parser.add_argument(
-        #'-o', '--output',
-        #help='Output',
-        #default=os.getcwd())
 
     parser.add_argument(
         '-b', '--backgrounds',
