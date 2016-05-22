@@ -17,13 +17,14 @@ import ccncpy.ccncpy as ccncpy
 plt.style.use('ggplot')
 
 def main(subject_loc, backgrounds, roi_list, graph, meanDfLoc,verbose, brain):
+    print 'ha'
     ##########################################################
     # Find freesurfer dir
     ##########################################################
     FS_description= ['bem','mri','scripts',
                      'src','stats','surf','tmp']
     
-    freesurfer_dir = ccncpy.subDirSearch(FS_description, 
+    freesurfer_dir = ccncpy.subDirSearch(FS_description,
                                          subject_loc)
 
     if len(freesurfer_dir) > 1:
