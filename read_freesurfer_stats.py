@@ -140,9 +140,10 @@ def get_cortical_rois():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        #formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description=textwrap.dedent('''\
-            {codeName} :
+            {codeName} : Read freesurfer recon-all outputs
             ========================================
             eg) {codeName} --input {in_put} --output {output}
             '''.format(codeName=os.path.basename(__file__),
