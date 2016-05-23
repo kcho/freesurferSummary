@@ -187,7 +187,7 @@ if __name__ == '__main__':
     df = openStatsTable_big(args.freesurferDir)
 
     if args.dataframe:
-        print df[['roi','region',args.index]]
+        print df[['region',args.index]]
 
     if args.graph:
         fig = graph_ind(df, args.index)
