@@ -145,7 +145,6 @@ if __name__ == '__main__':
         description=textwrap.dedent('''\
             {codeName} : Read freesurfer recon-all outputs
             ========================================
-            eg) {codeName} --input {in_put} --output {output}
             '''.format(codeName=os.path.basename(__file__),
                        in_put = 'subjectLoc',
                        output = 'outLoc')))
