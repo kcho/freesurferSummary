@@ -1,4 +1,6 @@
 #!/ccnc_bin/mini_env/bin/python
+
+
 from __future__ import division
 __author__ = 'kcho'
 import re
@@ -9,7 +11,11 @@ import matplotlib.pyplot as plt
 import argparse
 import valueSwap
 import textwrap
+sys.path.append('/ccnc_bin')
 import ccncpy.ccncpy as ccncpy
+from progressbar import ProgressBar
+import time
+
 
 plt.style.use('ggplot')
 
@@ -401,19 +407,23 @@ def draw_thickness(thicknessDf,meanDf, subjName, meanDfName, subject_loc):
     plt.savefig('/ccnc/mri_team/'+subject_loc)
 
 
-def dictWithTuple2df(thicknessDict):
-    df = pd.DataFrame.from_dict(thicknessDict)
-    df = df.stack().reset_index()
-    df = df[df.level_0==0].merge(df[df.level_0==1], on='level_1', how='inner')
-    df.columns = ['__','subroi','thickness','_','std']
+def dictWithTuple2df(infoDict):
+    df = pd.DataFrame.from_dict(infoDict)
+    df = df.T.reset_index()
+    df.columns = ['subroi', 'numvert', 'surfarea', 'grayvol',
+                  'thickavg', 'thickstd',
+                  'meancurv', 'gauscurv', 'foldind', 'curvind']
     df['side'] = df['subroi'].str[:2]
-    return df[['subroi','thickness','side','std']]
+    return df
 
 
 
-
-def getThickness(freesurfer_dir,roiDict):
+def getInfoFromLabel(freesurfer_dir,roiDict):
     thicknessDict={}
+
+    pbar = ProgressBar().start()
+    totalNum = 2 * len(roiDict.keys())
+    num = 1
     for side in ['lh','rh']:
         for cortex, rois in roiDict.iteritems():
             if len(rois) > 1:
@@ -432,11 +442,27 @@ def getThickness(freesurfer_dir,roiDict):
                 )
 
             output=os.popen(re.sub('\s+',' ',command)).read()
+            pbar.update((num/totalNum) * 100)
+            num+=1
 
             thickness = re.search('thickness\s+=\s+(\S+)\s+mm\s+\S+\s+(\S+)', output).group(1,2)
+            numvert = re.search('number of vertices\s+=\s+(\S+)', output).group(1)
+            surfarea = re.search('total surface area\s+=\s+(\S+)', output).group(1)
+            grayvol = re.search('total gray matter volume\s+=\s+(\S+)', output).group(1)
+            meancurv = re.search('average integrated rectified mean curvature\s+=\s+(\S+)', output).group(1)
+            gauscurv = re.search('average integrated rectified Gaussian curvature\s+=\s+(\S+)', output).group(1)
+            foldind = re.search('folding index\s+=\s+(\S+)', output).group(1)
+            curvind = re.search('intrinsic curvature index\s+=\s+(\S+)', output).group(1)
+
             thickness = tuple([float(x) for x in thickness])
-            thicknessDict[side+'_'+cortex] = thickness
-            print cortex, thickness
+            for i in numvert, surfarea, grayvol, meancurv, gauscurv, foldind, curvind:
+                i = float(i)
+
+            thicknessDict[side+'_'+cortex] = [numvert, surfarea, grayvol,
+                                              thickness[0], thickness[1],
+                                              meancurv, gauscurv, foldind, curvind]
+            #print cortex, rois, thicknessDict[side+'_'+cortex]
+    pbar.finish()
     return thicknessDict
 
 
@@ -500,17 +526,17 @@ def collectStats_v2(backgrounds):
         else:
             freesurfer_dir = ''.join(freesurfer_dir)
 
-        if not os.path.isfile(os.path.join(freesurfer_dir,'tmp','thick_kev_detailed.csv')):
+        if not os.path.isfile(os.path.join(freesurfer_dir,'tmp','thick_kev_detailed_new.csv')):
             makeLabel(freesurfer_dir)
             mergeLabel(freesurfer_dir, roiDict)
-            thicknessDict = getThickness(freesurfer_dir, roiDict)
-            thicknessDf = dictWithTuple2df(thicknessDict)
-            thicknessDf.to_csv(os.path.join(freesurfer_dir,'tmp','thick_kev_detailed.csv'))
+            infoDict = getInfoFromLabel(freesurfer_dir, roiDict)
+            infoDf = dictWithTuple2df(infoDict)
+            infoDf.to_csv(os.path.join(freesurfer_dir,'tmp','thick_kev_detailed_new.csv'))
             
         else:
-            thicknessDf = pd.read_csv(os.path.join(freesurfer_dir,'tmp','thick_kev_detailed.csv'))
+            infoDf = pd.read_csv(os.path.join(freesurfer_dir,'tmp','thick_kev_detailed_new.csv'))
 
-        subjectDict[background] = thicknessDf
+        subjectDict[background] = infoDf
 
 
     # sum up dataframes in a subjectDict dictionary
@@ -553,7 +579,7 @@ def collectStats(backgrounds):
         if not os.path.isfile(os.path.join(freesurfer_dir,'tmp','thick_kev.csv')):
             makeLabel(freesurfer_dir)
             mergeLabel(freesurfer_dir, roiDict)
-            thicknessDict = getThickness(freesurfer_dir, roiDict)
+            thicknessDict = getInfoFromLabel(freesurfer_dir, roiDict)
             thicknessDf = dictWithTuple2df(thicknessDict)
             thicknessDf.to_csv(os.path.join(freesurfer_dir,'tmp','thick_kev.csv'))
             
