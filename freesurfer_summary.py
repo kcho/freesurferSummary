@@ -1,6 +1,4 @@
 #!/ccnc_bin/mini_env/bin/python
-
-
 from __future__ import division
 __author__ = 'kcho'
 import re
@@ -429,20 +427,24 @@ def getInfoFromLabel(freesurfer_dir,roiDict):
         for cortex, rois in roiDict.iteritems():
             if len(rois) > 1:
                 command = 'mris_anatomical_stats \
-                -l {loc}/{side}_{cortex} FREESURFER {side} 2>/dev/null'.format(
+                -l {loc}/{side}_{cortex} {name} {side} 2>/dev/null'.format(
                     loc=os.path.join(freesurfer_dir,'tmp'),
                     side=side,
-                    cortex=cortex
+                    cortex=cortex,
+                    name=os.path.basename(freesurfer_dir)
                 )
             else:
                 command = 'mris_anatomical_stats \
-                -l {loc}/{side}.{cortex}.label FREESURFER {side} 2>/dev/null'.format(
+                -l {loc}/{side}.{cortex}.label {name} {side} 2>/dev/null'.format(
                     loc=os.path.join(freesurfer_dir,'tmp'),
                     side=side,
-                    cortex=cortex
+                    cortex=cortex,
+                    name=os.path.basename(freesurfer_dir)
                 )
 
+            print command
             output=os.popen(re.sub('\s+',' ',command)).read()
+            print output
             pbar.update((num/totalNum) * 100)
             num+=1
 
