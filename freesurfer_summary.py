@@ -495,7 +495,7 @@ def makeLabel(freesurfer_dir):
                                                     outDir=os.path.join(freesurfer_dir,'tmp'))
         os.popen(re.sub('\s+',' ',command)).read()
 
-def collectStats_v2(backgrounds):
+def collectStats_v2(subjectDir):
     '''
     CollectStats version 2
     Summarise cortical thickness in more than one subjects.
@@ -513,37 +513,31 @@ def collectStats_v2(backgrounds):
     # cortical regions as a dictionary
     roiDict = get_cortical_rois_detailed()
 
-    subjectDict = {}
-    for background in backgrounds:
-        # freesurfer sub-directory description
-        FS_description= ['bem','mri','scripts','src','stats','surf','tmp']
-        freesurfer_dir = ccncpy.subDirSearch(FS_description, background)
+    # freesurfer sub-directory description
+    FS_description= ['bem','mri','scripts','src','stats','surf','tmp']
+    freesurfer_dir = ccncpy.subDirSearch(FS_description, subjectDir)
 
-        if len(freesurfer_dir) > 1:
-            sys.exit(re.sub('\s+',' ',
-            'There are more than 1 freesurfer directory \
-                    under {0}'.format(subject_loc)))
-        else:
-            freesurfer_dir = ''.join(freesurfer_dir)
+    if len(freesurfer_dir) > 1:
+        print freesurfer_dir
+        sys.exit(re.sub('\s+',' ',
+        'There are more than 1 freesurfer directory \
+                under {0}'.format(freesurfer_dir)))
+    else:
+        freesurfer_dir = ''.join(freesurfer_dir)
 
-        if not os.path.isfile(os.path.join(freesurfer_dir,'tmp','thick_kev_detailed_new.csv')):
-            makeLabel(freesurfer_dir)
-            mergeLabel(freesurfer_dir, roiDict)
-            infoDict = getInfoFromLabel(freesurfer_dir, roiDict)
-            infoDf = dictWithTuple2df(infoDict)
-            infoDf.to_csv(os.path.join(freesurfer_dir,'tmp','thick_kev_detailed_new.csv'))
-            
-        else:
-            infoDf = pd.read_csv(os.path.join(freesurfer_dir,'tmp','thick_kev_detailed_new.csv'))
+    if not os.path.isfile(os.path.join(freesurfer_dir,'tmp','thick_kev_detailed_new.csv')):
+        makeLabel(freesurfer_dir)
+        mergeLabel(freesurfer_dir, roiDict)
+        infoDict = getInfoFromLabel(freesurfer_dir, roiDict)
+        infoDf = dictWithTuple2df(infoDict)
+        infoDf.to_csv(os.path.join(freesurfer_dir,'tmp','thick_kev_detailed_new.csv'))
 
-        subjectDict[background] = infoDf
-
-
-    # sum up dataframes in a subjectDict dictionary
-    finalDf = pd.concat([x for x in subjectDict.values()])
+    else:
+        infoDf = pd.read_csv(os.path.join(freesurfer_dir,'tmp','thick_kev_detailed_new.csv'),
+                             index_col=0)
 
     # return mean
-    return finalDf.groupby('subroi').mean().reset_index()
+    return infoDf
 
 def collectStats(backgrounds):
     '''
