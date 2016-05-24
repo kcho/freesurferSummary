@@ -19,7 +19,7 @@ import time
 
 plt.style.use('ggplot')
 
-def main(subject_loc, backgrounds, roi_list, graph, meanDfLoc,verbose, brain):
+def main(subject_loc, background_subject_locs, roi_list, graph, meanDfLoc,verbose, brain):
     print 'ha'
     ##########################################################
     # Find freesurfer dir
@@ -49,22 +49,22 @@ def main(subject_loc, backgrounds, roi_list, graph, meanDfLoc,verbose, brain):
     # Summarize cortical thickness
     ##########################################################
     # if no mean table is given but background list is given
-    if meanDfLoc == False and backgrounds != None:
-        print 'Calculating cortical thickness in {0}'.format(backgrounds)
+    if meanDfLoc == False and background_subject_locs != None:
+        print 'Calculating cortical thickness in {0}'.format(background_subject_locs)
         # make mean table
         meanDfName = raw_input('Name of the background subject : ')
 
         if verbose:
             meanDfList = []
-            for subjectDir in backgrounds:
+            for subjectDir in background_subject_locs:
                 meanDfList.append(collectStats_v2(subjectDir))
             meanDf = pd.concat(meanDfList)
         else:
-            meanDf = collectStats(backgrounds)
+            meanDf = collectStats(background_subject_locs)
 
     # if no mean table is given, and backround list is empty
     # use subject_loc as the background
-    elif meanDfLoc == False and backgrounds == None:
+    elif meanDfLoc == False and background_subject_locs == None:
         print 'No background subjects are given, now running only {0}'.format(subject_loc)
         meanDfName = ''
 
@@ -94,10 +94,10 @@ def main(subject_loc, backgrounds, roi_list, graph, meanDfLoc,verbose, brain):
     
     if graph:
         if verbose:
-            thicknessDf = collectStats_v2([os.path.dirname(freesurfer_dir)])#backgrounds)
+            thicknessDf = collectStats_v2([os.path.dirname(freesurfer_dir)])#background_subject_locs)
             draw_thickness_detailed(thicknessDf,meanDf,os.path.basename(subject_loc), meanDfName, subject_loc)
         else:
-            thicknessDf = collectStats([os.path.dirname(freesurfer_dir)])#backgrounds)
+            thicknessDf = collectStats([os.path.dirname(freesurfer_dir)])#background_subject_locs)
             draw_thickness(thicknessDf,meanDf,os.path.basename(subject_loc), meanDfName, subject_loc)
 
 
@@ -502,7 +502,7 @@ def collectStats_v2(subjectDir):
     '''
     CollectStats version 2
     Summarise cortical thickness in more than one subjects.
-    'backgrounds' should given in python list format.
+    'background_subject_locs' should given in python list format.
     For each background,
     1. Creates labels using makeLabel
     2. Merges labels according to the roiDict using mergeLabel
@@ -542,10 +542,10 @@ def collectStats_v2(subjectDir):
     # return mean
     return infoDf
 
-def collectStats(backgrounds):
+def collectStats(background_subject_locs):
     '''
     Summarise cortical thickness in more than one subjects.
-    'backgrounds' should given in python list format.
+    'background_subject_locs' should given in python list format.
     For each background,
     1. Creates labels using makeLabel
     2. Merges labels according to the roiDcit using mergeLabel
@@ -560,7 +560,7 @@ def collectStats(backgrounds):
     roiDict = get_cortical_rois()
 
     subjectDict = {}
-    for background in backgrounds:
+    for background in background_subject_locs:
 
         # freesurfer sub-directory description
         FS_description= ['bem','mri','scripts','src','stats','surf','tmp']
@@ -759,7 +759,7 @@ if __name__ == '__main__':
         default=os.getcwd())
 
     parser.add_argument(
-        '-b', '--backgrounds',
+        '-b', '--background_subject_locs',
         nargs='+',
         help='backround subject inputs eg)-l subj1 subj2 subj3')
         #default=[x for x in os.listdir(os.getcwd()) if os.path.isdir(x)])
@@ -797,4 +797,4 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    main(args.inputDir, args.backgrounds, args.rois, args.graph, args.meanDf, args.verbose, args.brain)
+    main(args.inputDir, args.background_subject_locs, args.rois, args.graph, args.meanDf, args.verbose, args.brain)
