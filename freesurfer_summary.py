@@ -442,9 +442,7 @@ def getInfoFromLabel(freesurfer_dir,roiDict):
                     name=os.path.basename(freesurfer_dir)
                 )
 
-            print command
             output=os.popen(re.sub('\s+',' ',command)).read()
-            print output
             pbar.update((num/totalNum) * 100)
             num+=1
 
