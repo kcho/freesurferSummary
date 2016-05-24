@@ -30,8 +30,8 @@
           <file leaf-file-name="freesurfer_summary.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/freesurfer_summary.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state vertical-scroll-proportion="0.26118326">
-                  <caret line="760" column="62" selection-start-line="760" selection-start-column="62" selection-end-line="760" selection-end-column="62" />
+                <state vertical-scroll-proportion="0.21500722">
+                  <caret line="773" column="0" selection-start-line="773" selection-start-column="0" selection-end-line="773" selection-end-column="0" />
                   <folding />
                 </state>
               </provider>
@@ -66,7 +66,7 @@
           <file leaf-file-name="freesurfer_summary.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/freesurfer_summary.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state vertical-scroll-proportion="0.8008658">
+                <state vertical-scroll-proportion="0.6926407">
                   <caret line="51" column="10" selection-start-line="51" selection-start-column="10" selection-end-line="51" selection-end-column="10" />
                   <folding />
                 </state>
@@ -436,7 +436,13 @@
       <option name="project" value="LOCAL" />
       <updated>1464065574859</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="argument default printing">
+      <created>1464065695706</created>
+      <option name="number" value="00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1464065695706</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -486,7 +492,8 @@
     <MESSAGE value="collect stats call from main changed" />
     <MESSAGE value="backgrounds changed to background_subject_locs" />
     <MESSAGE value="get_freesurferDir added" />
-    <option name="LAST_COMMIT_MESSAGE" value="get_freesurferDir added" />
+    <MESSAGE value="argument default printing" />
+    <option name="LAST_COMMIT_MESSAGE" value="argument default printing" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -606,8 +613,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/freesurfer_summary.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.26118326">
-          <caret line="760" column="62" selection-start-line="760" selection-start-column="62" selection-end-line="760" selection-end-column="62" />
+        <state vertical-scroll-proportion="0.21500722">
+          <caret line="773" column="0" selection-start-line="773" selection-start-column="0" selection-end-line="773" selection-end-column="0" />
           <folding />
         </state>
       </provider>

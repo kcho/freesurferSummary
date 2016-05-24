@@ -773,12 +773,6 @@ if __name__ == '__main__':
         default=os.getcwd())
 
     parser.add_argument(
-        '-b', '--background_subject_locs',
-        nargs='+',
-        help='backround subject inputs eg)-l subj1 subj2 subj3')
-        #default=[x for x in os.listdir(os.getcwd()) if os.path.isdir(x)])
-
-    parser.add_argument(
         '-r', '--rois',
         help='roi inputs in python list format',
         default="ctx_lh_G_cuneus")
