@@ -19,24 +19,38 @@ import time
 
 plt.style.use('ggplot')
 
-def main(subject_loc, background_subject_locs, roi_list, graph, meanDfLoc,verbose, brain):
-    print 'ha'
-    ##########################################################
-    # Find freesurfer dir
-    ##########################################################
+def get_freesurferDir(dir):
     FS_description= ['bem','mri','scripts',
                      'src','stats','surf','tmp']
-    
+
     freesurfer_dir = ccncpy.subDirSearch(FS_description,
                                          subject_loc)
 
     if len(freesurfer_dir) > 1:
-        print freesurfer_dir
-        sys.exit(re.sub('\s+',' ',
-        'There are more than 1 freesurfer directory \
-                under {0}'.format(subject_loc)))
+        print 'Please choose one data'
+        print '======================'
+
+        for num, i in enumerate(freesurfer_dir):
+            print '{number} : {location}'.format(number=num,
+                                                 location = i)
+            choice = raw_input('\t: ')
+
+        return freesurfer_dir[choice]
     else:
-        freesurfer_dir = ''.join(freesurfer_dir)
+        return freesurfer_dir
+
+
+def main(subject_loc, background_subject_locs, graph, meanDfLoc,verbose, brain):
+    ##########################################################
+    # Find freesurfer dir
+    ##########################################################
+
+
+    background_freesurfer_dirs = []
+    for bg_subject_loc in background_subject_locs:
+        background_freesurfer_dirs.append(ccncpy.subDirSearch(FS_description,
+                                                              bg_subject_loc))
+
 
 
     ##########################################################
@@ -797,4 +811,6 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    main(args.inputDir, args.background_subject_locs, args.rois, args.graph, args.meanDf, args.verbose, args.brain)
+    #main(args.inputDir, args.background_subject_locs, args.rois, args.graph, args.meanDf, args.verbose, args.brain)
+
+    main_freesurferDir = get_freesurferDir(args.inputDir)
