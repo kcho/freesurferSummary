@@ -793,12 +793,14 @@ if __name__ == '__main__':
     roiDict = get_cortical_rois()
 
     infoDf = collectStats_v2(main_freesurferDir)#background_subject_locs)
-    subjName = raw_input('Subject name : ')
-    draw_thickness_detailed(infoDf,
-                            meanDf,
-                            subjName,
-                            'HCs')
-
-    valueSwap.main(main_freesurferDir,
-                   os.path.join(main_freesurferDir,
-                                'tmp/thick_kev_detailed_new.csv'))
+    #subjName = raw_input('Subject name : ')
+    # subjName = 'ha'
+    # draw_thickness_detailed(infoDf,
+    #                         meanDf,
+    #                         subjName,
+    #                         'HCs')
+    #
+    # valueSwap.main(main_freesurferDir,
+    #                os.path.join(main_freesurferDir,
+    #                             'tmp/thick_kev_detailed_new.csv'))
+    print infoDf

@@ -46,7 +46,7 @@ import os
 # print infoDf
 
 
-main_freesurferDir = '/Users/kcho/T1/FREESURFER'
+main_freesurferDir = '/Volumes/promise/nas_BackUp/CCNC_MRI_3T/DNO/DNO46_KJU/baseline/FREESURFER'
 
 print main_freesurferDir
 os.environ["FREESURFER_HOME"] = '/Applications/freesurfer'
