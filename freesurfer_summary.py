@@ -24,7 +24,7 @@ def get_freesurferDir(dir):
                      'src','stats','surf','tmp']
 
     freesurfer_dir = ccncpy.subDirSearch(FS_description,
-                                         subject_loc)
+                                         dir)
 
     if len(freesurfer_dir) > 1:
         print 'Please choose one data'
@@ -35,29 +35,17 @@ def get_freesurferDir(dir):
                                                  location = i)
             choice = raw_input('\t: ')
 
-        return freesurfer_dir[choice]
+        return ''.join(freesurfer_dir[choice])
     else:
-        return freesurfer_dir
+        return ''.join(freesurfer_dir)
 
 
 def main(subject_loc, background_subject_locs, graph, meanDfLoc,verbose, brain):
-    ##########################################################
-    # Find freesurfer dir
-    ##########################################################
-
-
-    background_freesurfer_dirs = []
-    for bg_subject_loc in background_subject_locs:
-        background_freesurfer_dirs.append(ccncpy.subDirSearch(FS_description,
-                                                              bg_subject_loc))
-
 
 
     ##########################################################
     # Freesurfer setting
     ##########################################################
-    os.environ["FREESURFER_HOME"] = '/Applications/freesurfer'
-    os.environ["SUBJECTS_DIR"] = '{0}'.format(os.path.dirname(freesurfer_dir))
 
     ##########################################################
     # Summarize cortical thickness
@@ -129,7 +117,7 @@ def main(subject_loc, background_subject_locs, graph, meanDfLoc,verbose, brain):
     print "*"*80
 
 
-def draw_thickness_detailed(thicknessDf, meanDf, subjName, meanDfName,subject_loc):
+def draw_thickness_detailed(infoDf, meanDf, subjName, meanDfName):
     roiOrder = ['LPFC', 'OFC', 'MPFC', 'LTC', 'MTC', 'SMC', 'PC', 'OCC']
 
     def getRegion(roi):
@@ -138,16 +126,14 @@ def draw_thickness_detailed(thicknessDf, meanDf, subjName, meanDfName,subject_lo
             if roi in roiList:
                 return region
 
-    thicknessDf['roi'] = thicknessDf.subroi.str[3:]
-    thicknessDf['side'] = thicknessDf.subroi.str[:2]
-    thicknessDf['region'] = thicknessDf.roi.apply(getRegion)
+    infoDf['roi'] = infoDf.subroi.str[3:]
+    infoDf['region'] = infoDf.roi.apply(getRegion)
     meanDf['roi'] = meanDf.subroi.str[3:]
-    meanDf['side'] = meanDf.subroi.str[:2]
     meanDf = meanDf.groupby(['roi','side']).mean().reset_index()
     meanDf['region'] = meanDf.roi.apply(getRegion)
 
-    gb = thicknessDf.groupby('region')
-    thicknessDf = pd.concat([gb.get_group('LPFC'),
+    gb = infoDf.groupby('region')
+    infoDf = pd.concat([gb.get_group('LPFC'),
                         gb.get_group('OFC'),
                         gb.get_group('MPFC'),
                         gb.get_group('LTC'),
@@ -166,23 +152,23 @@ def draw_thickness_detailed(thicknessDf, meanDf, subjName, meanDfName,subject_lo
                         gbmean.get_group('PC'),
                         gbmean.get_group('OCC')])
                         
-    gb = thicknessDf.groupby('side')
-    label = thicknessDf.subroi.str[3:].unique()
+    gb = infoDf.groupby('side')
+    label = infoDf.subroi.str[3:].unique()
 
     fig = plt.figure(figsize=(22,12))
     fig.suptitle("Cortical thickness in all regions", fontsize=20)
 
     lh_g = plt.subplot2grid((2,2),(0, 0), colspan=2)
     rh_g = plt.subplot2grid((2,2),(1, 0), colspan=2)
-    lh_g.plot(gb.get_group('lh')['thickness'],'r',label=subjName)
+    lh_g.plot(gb.get_group('lh')['thickavg'],'r',label=subjName)
 
-    lh_g.plot(meanDf.groupby('side').get_group('lh')['thickness'],'r--',label=meanDfName)
+    lh_g.plot(meanDf.groupby('side').get_group('lh')['thickavg'],'r--',label=meanDfName)
 
     # error bar
 
     eb1 = lh_g.errorbar(range(len(meanDf.roi.unique())),
-                        meanDf.groupby('side').get_group('lh')['thickness'],
-                        meanDf.groupby('side').get_group('lh')['std'],
+                        meanDf.groupby('side').get_group('lh')['thickavg'],
+                        meanDf.groupby('side').get_group('lh')['thickstd'],
                         linestyle='None',
                         marker='^')
     eb1[-1][0].set_linestyle('--')
@@ -236,10 +222,10 @@ def draw_thickness_detailed(thicknessDf, meanDf, subjName, meanDfName,subject_lo
                         on=['roi','side','region'],
                         how='inner')
 
-    mergedDf['mean_sub_indv'] = mergedDf.thickness_x - mergedDf.thickness_y
+    mergedDf['mean_sub_indv'] = mergedDf.thickavg_x - mergedDf.thickavg_y
     for row in mergedDf[abs(mergedDf['mean_sub_indv']) > 0.5].iterrows():
         lh_g.annotate(row[1].roi,
-                xy=(row[0], row[1].thickness_y),
+                xy=(row[0], row[1].thickavg_y),
                 xytext=(row[0], 1.5-row[1].mean_sub_indv/3),
                 arrowprops=dict(facecolor='green', shrink=0.05),
                 horizontalalignment='left',
@@ -248,13 +234,13 @@ def draw_thickness_detailed(thicknessDf, meanDf, subjName, meanDfName,subject_lo
 
 
 
-    rh_g.plot(gb.get_group('rh')['thickness'],'b',label=subjName)
-    rh_g.plot(meanDf.groupby('side').get_group('rh')['thickness'],'b--',label=meanDfName)
+    rh_g.plot(gb.get_group('rh')['thickavg'],'b',label=subjName)
+    rh_g.plot(meanDf.groupby('side').get_group('rh')['thickavg'],'b--',label=meanDfName)
 
     #error bar
     eb2 = rh_g.errorbar(range(len(meanDf.roi.unique())),
-                        meanDf.groupby('side').get_group('rh')['thickness'],
-                        meanDf.groupby('side').get_group('rh')['std'],
+                        meanDf.groupby('side').get_group('rh')['thickavg'],
+                        meanDf.groupby('side').get_group('rh')['thickstd'],
                         linestyle='None',
                         marker='^',
                         color='b')
@@ -312,10 +298,10 @@ def draw_thickness_detailed(thicknessDf, meanDf, subjName, meanDfName,subject_lo
                         on=['roi','side','region'],
                         how='inner')
 
-    mergedDf['mean_sub_indv'] = mergedDf.thickness_x - mergedDf.thickness_y
+    mergedDf['mean_sub_indv'] = mergedDf.thickavg_x - mergedDf.thickavg_y
     for row in mergedDf[abs(mergedDf['mean_sub_indv']) > 0.5].iterrows():
         rh_g.annotate(row[1].roi,
-                xy=(row[0], row[1].thickness_y),
+                xy=(row[0], row[1].thickavg_y),
                 xytext=(row[0], 1.5-row[1].mean_sub_indv/3),
                 arrowprops=dict(facecolor='green', shrink=0.05),
                 horizontalalignment='left',
@@ -328,16 +314,14 @@ def draw_thickness_detailed(thicknessDf, meanDf, subjName, meanDfName,subject_lo
     plt.setp(labels, rotation=30)
     labels = lh_g.get_xticklabels()
     plt.setp(labels, rotation=30)
-    fig.savefig('/ccnc/mri_team/'+os.path.basename(subject_loc))
+    fig.savefig('/ccnc/mri_team/'+os.path.basename(subjName))
 
-def draw_thickness(thicknessDf,meanDf, subjName, meanDfName, subject_loc):
-    thicknessDf['roi'] = thicknessDf.subroi.str[3:]
-    thicknessDf['side'] = thicknessDf.subroi.str[:2]
+def draw_thickness(infoDf,meanDf, subjName, meanDfName, subject_loc):
+    infoDf['roi'] = infoDf.subroi.str[3:]
     meanDf['roi'] = meanDf.subroi.str[3:]
-    meanDf['side'] = meanDf.subroi.str[:2]
 
-    gb = thicknessDf.groupby('roi')
-    thicknessDf = pd.concat([gb.get_group('LPFC'),
+    gb = infoDf.groupby('roi')
+    infoDf = pd.concat([gb.get_group('LPFC'),
                         gb.get_group('OFC'),
                         gb.get_group('MPFC'),
                         gb.get_group('LTC'),
@@ -357,22 +341,22 @@ def draw_thickness(thicknessDf,meanDf, subjName, meanDfName, subject_loc):
                         gbmean.get_group('PC'),
                         gbmean.get_group('OCC')])
 
-    gb = thicknessDf.groupby('side')
-    label = thicknessDf.subroi.str[3:].unique()
+    gb = infoDf.groupby('side')
+    label = infoDf.subroi.str[3:].unique()
 
     fig = plt.figure(figsize=(12,8))
     fig.suptitle("Cortical thickness in eight regions", fontsize=20)
 
     lh_g = plt.subplot2grid((2,2),(0, 0), rowspan=2)
     rh_g = plt.subplot2grid((2,2),(0, 1), rowspan=2)
-    lh_g.plot(gb.get_group('lh')['thickness'],'r',label=subjName)
+    lh_g.plot(gb.get_group('lh')['thickavg'],'r',label=subjName)
 
-    lh_g.plot(meanDf.groupby('side').get_group('lh')['thickness'],'r--',label=meanDfName)
+    lh_g.plot(meanDf.groupby('side').get_group('lh')['thickavg'],'r--',label=meanDfName)
 
     # error bar
 
     eb1 = lh_g.errorbar(range(len(meanDf.roi.unique())),
-                        meanDf.groupby('side').get_group('lh')['thickness'],
+                        meanDf.groupby('side').get_group('lh')['thickavg'],
                         meanDf.groupby('side').get_group('lh')['std'],
                         linestyle='None',
                         marker='^')
@@ -393,12 +377,12 @@ def draw_thickness(thicknessDf,meanDf, subjName, meanDfName, subject_loc):
 
 
 
-    rh_g.plot(gb.get_group('rh')['thickness'],'b',label=subjName)
-    rh_g.plot(meanDf.groupby('side').get_group('rh')['thickness'],'b--',label=meanDfName)
+    rh_g.plot(gb.get_group('rh')['thickavg'],'b',label=subjName)
+    rh_g.plot(meanDf.groupby('side').get_group('rh')['thickavg'],'b--',label=meanDfName)
 
     # error bar
     eb2 = rh_g.errorbar(range(len(meanDf.roi.unique())),
-                        meanDf.groupby('side').get_group('rh')['thickness'],
+                        meanDf.groupby('side').get_group('rh')['thickavg'],
                         meanDf.groupby('side').get_group('rh')['std'],
                         linestyle='None',
                         marker='^',
@@ -436,7 +420,7 @@ def dictWithTuple2df(infoDict):
 
 
 def getInfoFromLabel(freesurfer_dir,roiDict):
-    thicknessDict={}
+    infoDict={}
 
     pbar = ProgressBar().start()
     totalNum = 2 * len(roiDict.keys())
@@ -475,12 +459,12 @@ def getInfoFromLabel(freesurfer_dir,roiDict):
             for i in numvert, surfarea, grayvol, meancurv, gauscurv, foldind, curvind:
                 i = float(i)
 
-            thicknessDict[side+'_'+cortex] = [numvert, surfarea, grayvol,
+            infoDict[side+'_'+cortex] = [numvert, surfarea, grayvol,
                                               thickness[0], thickness[1],
                                               meancurv, gauscurv, foldind, curvind]
             #print cortex, rois, thicknessDict[side+'_'+cortex]
     pbar.finish()
-    return thicknessDict
+    return infoDict
 
 
 def mergeLabel(freesurfer_dir, roiDict):
@@ -590,14 +574,14 @@ def collectStats(background_subject_locs):
         if not os.path.isfile(os.path.join(freesurfer_dir,'tmp','thick_kev.csv')):
             makeLabel(freesurfer_dir)
             mergeLabel(freesurfer_dir, roiDict)
-            thicknessDict = getInfoFromLabel(freesurfer_dir, roiDict)
-            thicknessDf = dictWithTuple2df(thicknessDict)
-            thicknessDf.to_csv(os.path.join(freesurfer_dir,'tmp','thick_kev.csv'))
+            infoDict = getInfoFromLabel(freesurfer_dir, roiDict)
+            infoDf = dictWithTuple2df(infoDict)
+            infoDf.to_csv(os.path.join(freesurfer_dir,'tmp','thick_kev.csv'))
             
         else:
-            thicknessDf = pd.read_csv(os.path.join(freesurfer_dir,'tmp','thick_kev.csv'))
+            infoDf = pd.read_csv(os.path.join(freesurfer_dir,'tmp','thick_kev.csv'))
 
-        subjectDict[background] = thicknessDf
+        subjectDict[background] = infoDf
 
 
     # sum up dataframes in a subjectDict dictionary
@@ -807,4 +791,24 @@ if __name__ == '__main__':
 
     #main(args.inputDir, args.background_subject_locs, args.rois, args.graph, args.meanDf, args.verbose, args.brain)
 
+
     main_freesurferDir = get_freesurferDir(args.inputDir)
+
+    print main_freesurferDir
+    os.environ["FREESURFER_HOME"] = '/Applications/freesurfer'
+    os.environ["SUBJECTS_DIR"] = '{0}'.format(os.path.dirname(main_freesurferDir))
+
+
+    meanDf = pd.read_csv('/ccnc_bin/meanThickness/detailed_mean_2015_12_28.csv', index_col=0)
+    roiDict = get_cortical_rois()
+
+    infoDf = collectStats_v2(main_freesurferDir)#background_subject_locs)
+    subjName = raw_input('Subject name : ')
+    draw_thickness_detailed(infoDf,
+                            meanDf,
+                            subjName,
+                            'HCs')
+
+    valueSwap.main(main_freesurferDir,
+                   os.path.join(main_freesurferDir,
+                                'tmp/thick_kev_detailed_new.csv'))

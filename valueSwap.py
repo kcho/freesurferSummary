@@ -162,7 +162,7 @@ def cleanMean(meanCSV, indCSV):
                         how='inner')
 
     # individual subject thickness - mean thickness
-    mergedDf['mean_sub_indv'] = (mergedDf.thickness_y - mergedDf.thickness_x)
+    mergedDf['mean_sub_indv'] = (mergedDf.thickavg_y - mergedDf.thickavg_x)
     mergedDf['mean_sub_indv_cov'] =  mergedDf['mean_sub_indv']
     return mergedDf
 
