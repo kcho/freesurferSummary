@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="8aaea901-96fc-4c62-bae4-1bd73618c4b3" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/freesurfer_summary.py" afterPath="$PROJECT_DIR$/freesurfer_summary.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="valueExtraction.iws" />
@@ -28,8 +27,8 @@
       <file leaf-file-name="freesurfer_summary.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/freesurfer_summary.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.41449815">
-              <caret line="516" column="42" selection-start-line="516" selection-start-column="42" selection-end-line="516" selection-end-column="42" />
+            <state vertical-scroll-proportion="0.49814126">
+              <caret line="530" column="17" selection-start-line="530" selection-start-column="17" selection-end-line="530" selection-end-column="17" />
               <folding />
             </state>
           </provider>
@@ -440,7 +439,13 @@
       <option name="project" value="LOCAL" />
       <updated>1464075263361</updated>
     </task>
-    <option name="localTasksCounter" value="16" />
+    <task id="LOCAL-00016" summary="test">
+      <created>1464075329003</created>
+      <option name="number" value="00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1464075329003</updated>
+    </task>
+    <option name="localTasksCounter" value="17" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -495,7 +500,8 @@
     <MESSAGE value="thickness to thickavg" />
     <MESSAGE value="test change" />
     <MESSAGE value="test&#10;" />
-    <option name="LAST_COMMIT_MESSAGE" value="test&#10;" />
+    <MESSAGE value="test" />
+    <option name="LAST_COMMIT_MESSAGE" value="test" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -584,7 +590,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/Dropbox/Knowledges/python/virtualEnv/lib/python2.7/site-packages/pandas/io/parsers.py" />
     <entry file="file://$PROJECT_DIR$/plot.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
@@ -641,10 +646,18 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$USER_HOME$/Dropbox/Knowledges/python/virtualEnv/lib/python2.7/site-packages/pandas/io/parsers.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.65132743">
+          <caret line="1042" column="13" selection-start-line="1042" selection-start-column="13" selection-end-line="1042" selection-end-column="13" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/freesurfer_summary.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.41449815">
-          <caret line="516" column="42" selection-start-line="516" selection-start-column="42" selection-end-line="516" selection-end-column="42" />
+        <state vertical-scroll-proportion="0.49814126">
+          <caret line="530" column="17" selection-start-line="530" selection-start-column="17" selection-end-line="530" selection-end-column="17" />
           <folding />
         </state>
       </provider>
