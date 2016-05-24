@@ -515,8 +515,7 @@ def collectStats_v2(subjectDir):
     roiDict = get_cortical_rois_detailed()
 
     # freesurfer sub-directory description
-    FS_description= ['bem','mri','scripts','src','stats','surf','tmp']
-    freesurfer_dir = ccncpy.subDirSearch(FS_description, subjectDir)
+    print 'freesufer_dir',freesurfer_dir
 
     if len(freesurfer_dir) > 1:
         print freesurfer_dir
