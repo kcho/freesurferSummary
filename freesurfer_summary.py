@@ -782,7 +782,7 @@ if __name__ == '__main__':
     #main(args.inputDir, args.background_subject_locs, args.rois, args.graph, args.meanDf, args.verbose, args.brain)
 
 
-    main_freesurferDir = get_freesurferDir(args.inputDir)
+    main_freesurferDir = get_freesurferDir(os.path.abspath(args.inputDir))
 
     print main_freesurferDir
     os.environ["FREESURFER_HOME"] = '/Applications/freesurfer'
