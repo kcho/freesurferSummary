@@ -496,7 +496,7 @@ def makeLabel(freesurfer_dir):
                                                     outDir=os.path.join(freesurfer_dir,'tmp'))
         os.popen(re.sub('\s+',' ',command)).read()
 
-def collectStats_v2(subjectDir):
+def collectStats_v2(freesurfer_dir):
     '''
     CollectStats version 2
     Summarise cortical thickness in more than one subjects.
@@ -515,15 +515,6 @@ def collectStats_v2(subjectDir):
     roiDict = get_cortical_rois_detailed()
 
     # freesurfer sub-directory description
-    print 'freesufer_dir',freesurfer_dir
-
-    if len(freesurfer_dir) > 1:
-        print freesurfer_dir
-        sys.exit(re.sub('\s+',' ',
-        'There are more than 1 freesurfer directory \
-                under {0}'.format(freesurfer_dir)))
-    else:
-        freesurfer_dir = ''.join(freesurfer_dir)
 
     if not os.path.isfile(os.path.join(freesurfer_dir,'tmp','thick_kev_detailed_new.csv')):
         makeLabel(freesurfer_dir)

@@ -28,8 +28,8 @@
       <file leaf-file-name="freesurfer_summary.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/freesurfer_summary.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.55576205">
-              <caret line="517" column="26" selection-start-line="517" selection-start-column="26" selection-end-line="517" selection-end-column="26" />
+            <state vertical-scroll-proportion="0.41449815">
+              <caret line="516" column="42" selection-start-line="516" selection-start-column="42" selection-end-line="516" selection-end-column="42" />
               <folding />
             </state>
           </provider>
@@ -434,7 +434,13 @@
       <option name="project" value="LOCAL" />
       <updated>1464075091383</updated>
     </task>
-    <option name="localTasksCounter" value="15" />
+    <task id="LOCAL-00015" summary="test&#10;">
+      <created>1464075263360</created>
+      <option name="number" value="00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1464075263361</updated>
+    </task>
+    <option name="localTasksCounter" value="16" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -488,7 +494,8 @@
     <MESSAGE value="background removed from option" />
     <MESSAGE value="thickness to thickavg" />
     <MESSAGE value="test change" />
-    <option name="LAST_COMMIT_MESSAGE" value="test change" />
+    <MESSAGE value="test&#10;" />
+    <option name="LAST_COMMIT_MESSAGE" value="test&#10;" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -636,8 +643,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/freesurfer_summary.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.55576205">
-          <caret line="517" column="26" selection-start-line="517" selection-start-column="26" selection-end-line="517" selection-end-column="26" />
+        <state vertical-scroll-proportion="0.41449815">
+          <caret line="516" column="42" selection-start-line="516" selection-start-column="42" selection-end-line="516" selection-end-column="42" />
           <folding />
         </state>
       </provider>
