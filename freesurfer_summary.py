@@ -758,7 +758,7 @@ def get_cortical_rois_detailed():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description=textwrap.dedent('''\
             {codeName} : 
             ========================================
