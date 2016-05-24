@@ -55,7 +55,10 @@ def main(subject_loc, backgrounds, roi_list, graph, meanDfLoc,verbose, brain):
         meanDfName = raw_input('Name of the background subject : ')
 
         if verbose:
-            meanDf = collectStats_v2(backgrounds)
+            meanDfList = []
+            for subjectDir in backgrounds:
+                meanDfList.append(collectStats_v2(subjectDir))
+            meanDf = pd.concat(meanDfList)
         else:
             meanDf = collectStats(backgrounds)
 
