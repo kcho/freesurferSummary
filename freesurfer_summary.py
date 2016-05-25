@@ -773,7 +773,7 @@ if __name__ == '__main__':
         default=False)
 
     parser.add_argument(
-        '-g', '--gender',
+        '-x', '--gender',
         help='M or F',
         )
 
