@@ -692,6 +692,14 @@ def roi_extraction(subjectDir, roiName, roiNumber=False, outputDir=False):
     output = os.popen(command).read()
 
 
+def make_mean_df(freesurferDirList):
+    dfList = []
+    for freesurferDir in freesurferDirList:
+        dfList.append(collectStats_v2(freesurferDir))
+    dfMerged = pd.concat(dfList)
+
+    return dfMerged
+
 def get_cortical_rois():
     '''
     returns 8 cortical divisions in dictionary
