@@ -701,6 +701,10 @@ def concatFsDf(freesurferDirList):
 
     return dfMerged
 
+def concatDf_to_meanDf(concatDf):
+    meanDf = concatDf.groupby(concatDf.index).mean()
+    return pd.concat([concatDf.subroi.drop_duplicates(), meanDf], axis=1)
+
 def subjDirs_to_fsDirs(subjectDirList):
     freesurferDirList = []
 

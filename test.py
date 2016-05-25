@@ -65,8 +65,9 @@ subjName = 'ha'
 freesuferList = subjDirs_to_fsDirs(['/Users/kcho/T1/NOR60_KSH',
                                     '/Users/kcho/T1/FREESURFER'])
 print freesuferList
-meanDf = concatFsDf(freesuferList)
-print meanDf.groupby(meanDf.index).mean()
+concatDf = concatFsDf(freesuferList)
+print concatDf_to_meanDf(concatDf)
+
 #pd.concat((df1, df2), axis=1).mean(axis=1)
 # draw_thickness_detailed(infoDf,
 #                         meanDf,
