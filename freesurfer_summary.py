@@ -817,7 +817,8 @@ if __name__ == '__main__':
 
     if args.createMeanFrom:
         freesurferList = subjDirs_to_fsDirs(args.createMeanFrom)
-        meanDf = make_mean_df(freesurferList)
+        concatDf = concatFsDf(freesurferList)
+        meanDf = concatDf_to_meanDf(concatDf)
         if args.saveMeanDf:
             meanDf.to_csv(args.saveMeanDf)
     else:
