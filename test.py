@@ -61,6 +61,12 @@ subjName = 'ha'
 
 
 print infoDf
+
+freesuferList = subjDirs_to_fsDirs(['/Users/kcho/T1/NOR60_KSH',
+                                    '/Users/kcho/T1/FREESURFER'])
+print freesuferList
+meanDf = make_mean_df(freesuferList)
+print meanDf
 # draw_thickness_detailed(infoDf,
 #                         meanDf,
 #                         subjName,
