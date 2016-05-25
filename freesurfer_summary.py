@@ -773,6 +773,11 @@ if __name__ == '__main__':
         default=False)
 
     parser.add_argument(
+        '-m', '--male',
+        help='If male option is given, it read meanDf from male mean dataframe',
+        default=False)
+
+    parser.add_argument(
         '-s', '--saveMeanDf',
         help='output location of the meanDf created from -c',
         default=False)
@@ -826,8 +831,10 @@ if __name__ == '__main__':
 
     roiDict = get_cortical_rois()
 
-    infoDf = collectStats_v2(main_freesurferDir)#background_subject_locs)
-    #subjName = raw_input('Subject name : ')
+    infoDf = collectStats_v2(main_freesurferDir)
+
+    # background_subject_locs)
+    # subjName = raw_input('Subject name : ')
     # subjName = 'ha'
     # draw_thickness_detailed(infoDf,
     #                         meanDf,
