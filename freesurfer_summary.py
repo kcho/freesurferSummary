@@ -697,7 +697,7 @@ def make_mean_df(freesurferDirList):
 
     for freesurferDir in freesurferDirList:
         dfList.append(collectStats_v2(freesurferDir))
-    dfMerged = pd.concat(dfList)
+    dfMerged = pd.concat(dfList, axis=1)
 
     return dfMerged
 
