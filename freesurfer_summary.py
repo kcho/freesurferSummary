@@ -692,12 +692,12 @@ def roi_extraction(subjectDir, roiName, roiNumber=False, outputDir=False):
     output = os.popen(command).read()
 
 
-def make_mean_df(freesurferDirList):
+def concatFsDf(freesurferDirList):
     dfList = []
 
     for freesurferDir in freesurferDirList:
         dfList.append(collectStats_v2(freesurferDir))
-    dfMerged = pd.concat(dfList, axis=1)
+    dfMerged = pd.concat(dfList)
 
     return dfMerged
 
