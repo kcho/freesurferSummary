@@ -807,7 +807,12 @@ if __name__ == '__main__':
     os.environ["SUBJECTS_DIR"] = '{0}'.format(os.path.dirname(main_freesurferDir))
 
 
-    meanDf = pd.read_csv('/ccnc_bin/meanThickness/detailed_mean_2015_12_28.csv', index_col=0)
+    if args.createMeanFrom != False:
+        freesurferList = subjDirs_to_fsDirs(args.createMeanFrom)
+        meanDf = make_mean_df(freesurferList)
+    else:
+        meanDf = pd.read_csv('/ccnc_bin/meanThickness/detailed_mean_2015_12_28.csv', index_col=0)
+
     roiDict = get_cortical_rois()
 
     infoDf = collectStats_v2(main_freesurferDir)#background_subject_locs)
@@ -821,4 +826,7 @@ if __name__ == '__main__':
     # valueSwap.main(main_freesurferDir,
     #                os.path.join(main_freesurferDir,
     #                             'tmp/thick_kev_detailed_new.csv'))
+
+
+
     print infoDf
