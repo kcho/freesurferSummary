@@ -773,9 +773,9 @@ if __name__ == '__main__':
         default=False)
 
     parser.add_argument(
-        '-m', '--male',
-        help='If male option is given, it read meanDf from male mean dataframe',
-        default=False)
+        '-g', '--gender',
+        help='M or F',
+        )
 
     parser.add_argument(
         '-s', '--saveMeanDf',
@@ -810,12 +810,11 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    #main(args.inputDir, args.background_subject_locs, args.rois, args.graph, args.meanDf, args.verbose, args.brain)
-
-
+    # Main subject
     main_freesurferDir = get_freesurferDir(os.path.abspath(args.inputDir))
-
     print main_freesurferDir
+
+    # Freesurfer environment Settings
     os.environ["FREESURFER_HOME"] = '/Applications/freesurfer'
     os.environ["SUBJECTS_DIR"] = '{0}'.format(os.path.dirname(main_freesurferDir))
 
@@ -826,6 +825,10 @@ if __name__ == '__main__':
         meanDf = concatDf_to_meanDf(concatDf)
         if args.saveMeanDf:
             meanDf.to_csv(args.saveMeanDf)
+    elif args.gender.upper() == 'M':
+        meanDf = pd.read_csv('/ccnc_bin/meanThickness/male_df.csv', index_col=0)
+    elif args.gender.upper() == 'F':
+        meanDf = pd.read_csv('/ccnc_bin/meanThickness/female_df.csv', index_col=0)
     else:
         meanDf = pd.read_csv('/ccnc_bin/meanThickness/detailed_mean_2015_12_28.csv', index_col=0)
 

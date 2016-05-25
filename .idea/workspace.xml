@@ -31,8 +31,8 @@
       <file leaf-file-name="freesurfer_summary.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/freesurfer_summary.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.64873415">
-              <caret line="777" column="22" selection-start-line="777" selection-start-column="22" selection-end-line="777" selection-end-column="22" />
+            <state vertical-scroll-proportion="0.5205696">
+              <caret line="830" column="60" selection-start-line="830" selection-start-column="60" selection-end-line="830" selection-end-column="60" />
               <folding />
             </state>
           </provider>
@@ -512,7 +512,13 @@
       <option name="project" value="LOCAL" />
       <updated>1464158570806</updated>
     </task>
-    <option name="localTasksCounter" value="25" />
+    <task id="LOCAL-00025" summary="male argparse option is added">
+      <created>1464159265075</created>
+      <option name="number" value="00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1464159265075</updated>
+    </task>
+    <option name="localTasksCounter" value="26" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -575,7 +581,8 @@
     <MESSAGE value="name change" />
     <MESSAGE value="concatDf_to_meanDf added" />
     <MESSAGE value="saveMeanDf option added to argparse" />
-    <option name="LAST_COMMIT_MESSAGE" value="saveMeanDf option added to argparse" />
+    <MESSAGE value="male argparse option is added" />
+    <option name="LAST_COMMIT_MESSAGE" value="male argparse option is added" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -794,8 +801,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/freesurfer_summary.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.64873415">
-          <caret line="777" column="22" selection-start-line="777" selection-start-column="22" selection-end-line="777" selection-end-column="22" />
+        <state vertical-scroll-proportion="0.5205696">
+          <caret line="830" column="60" selection-start-line="830" selection-start-column="60" selection-end-line="830" selection-end-column="60" />
           <folding />
         </state>
       </provider>
