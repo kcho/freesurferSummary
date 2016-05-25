@@ -149,7 +149,7 @@ def draw_thickness_detailed(infoDf, meanDf, subjName, meanDfName):
                         gbmean.get_group('SMC'),
                         gbmean.get_group('PC'),
                         gbmean.get_group('OCC')])
-                        
+
     gb = infoDf.groupby('side')
     label = infoDf.subroi.str[3:].unique()
 
@@ -338,7 +338,7 @@ def draw_thickness(infoDf,meanDf, subjName, meanDfName, subject_loc):
                         gbmean.get_group('SMC'),
                         gbmean.get_group('PC'),
                         gbmean.get_group('OCC')])
-
+    print meanDf
     gb = infoDf.groupby('side')
     label = infoDf.subroi.str[3:].unique()
 
