@@ -744,7 +744,6 @@ def get_cortical_rois_detailed():
     for key, roi_list in roiDict.iteritems():
         detailed = detailed + roi_list
 
-
     detailed_ROIs = {}
     for roi in detailed:
         detailed_ROIs[roi] = [roi]
@@ -771,6 +770,11 @@ if __name__ == '__main__':
         '-c', '--createMeanFrom',
         help='Subject locations to create mean',
         nargs='+',
+        default=False)
+
+    parser.add_argument(
+        '-s', '--saveMeanDf',
+        help='output location of the meanDf created from -c',
         default=False)
 
     parser.add_argument(
@@ -811,9 +815,11 @@ if __name__ == '__main__':
     os.environ["SUBJECTS_DIR"] = '{0}'.format(os.path.dirname(main_freesurferDir))
 
 
-    if args.createMeanFrom != False:
+    if args.createMeanFrom:
         freesurferList = subjDirs_to_fsDirs(args.createMeanFrom)
         meanDf = make_mean_df(freesurferList)
+        if args.saveMeanDf:
+            meanDf.to_csv(args.saveMeanDf)
     else:
         meanDf = pd.read_csv('/ccnc_bin/meanThickness/detailed_mean_2015_12_28.csv', index_col=0)
 
@@ -830,7 +836,5 @@ if __name__ == '__main__':
     # valueSwap.main(main_freesurferDir,
     #                os.path.join(main_freesurferDir,
     #                             'tmp/thick_kev_detailed_new.csv'))
-
-
 
     print infoDf
