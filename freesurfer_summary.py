@@ -703,7 +703,9 @@ def concatFsDf(freesurferDirList):
 
 def concatDf_to_meanDf(concatDf):
     meanDf = concatDf.groupby(concatDf.index).mean()
-    return pd.concat([concatDf.subroi.drop_duplicates(), meanDf], axis=1)
+    infoCols = concatDf.ix[concatDf.index, ['subroi','side']].drop_duplicates()
+    print infoCols
+    return pd.concat([infoCols, meanDf], axis=1)
 
 def subjDirs_to_fsDirs(subjectDirList):
     freesurferDirList = []
@@ -835,6 +837,13 @@ if __name__ == '__main__':
         meanDf = pd.read_csv('/ccnc_bin/meanThickness/detailed_mean_2015_12_28.csv', index_col=0)
 
     print meanDf
+
+    # Graph
+    draw_thickness_detailed(infoDf,
+                            meanDf,
+                            os.path.basename(os.path.abspath(args.inputDir)),
+                            'CCNC_mean')
+
 
 
 
