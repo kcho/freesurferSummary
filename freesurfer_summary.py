@@ -694,11 +694,20 @@ def roi_extraction(subjectDir, roiName, roiNumber=False, outputDir=False):
 
 def make_mean_df(freesurferDirList):
     dfList = []
+
     for freesurferDir in freesurferDirList:
         dfList.append(collectStats_v2(freesurferDir))
     dfMerged = pd.concat(dfList)
 
     return dfMerged
+
+def subjDirs_to_fsDirs(subjectDirList):
+    freesurferDirList = []
+
+    for subjDir in subjectDirList:
+        freesurferDirList.append(get_freesurferDir(subjDir))
+
+    return freesurferDirList
 
 def get_cortical_rois():
     '''
