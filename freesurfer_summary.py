@@ -764,9 +764,10 @@ if __name__ == '__main__':
         default=os.getcwd())
 
     parser.add_argument(
-        '-r', '--rois',
-        help='roi inputs in python list format',
-        default="ctx_lh_G_cuneus")
+        '-c', '--createMeanFrom',
+        help='Subject locations to create mean',
+        nargs='+',
+        default=False)
 
     parser.add_argument(
         '-g', '--graph',
