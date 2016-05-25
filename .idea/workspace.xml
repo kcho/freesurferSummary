@@ -31,8 +31,8 @@
       <file leaf-file-name="freesurfer_summary.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/freesurfer_summary.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.5205696">
-              <caret line="830" column="60" selection-start-line="830" selection-start-column="60" selection-end-line="830" selection-end-column="60" />
+            <state vertical-scroll-proportion="0.27373418">
+              <caret line="825" column="30" selection-start-line="825" selection-start-column="30" selection-end-line="825" selection-end-column="30" />
               <folding />
             </state>
           </provider>
@@ -42,7 +42,7 @@
         <entry file="file://$PROJECT_DIR$/test.py">
           <provider selected="true" editor-type-id="text-editor">
             <state vertical-scroll-proportion="0.0">
-              <caret line="56" column="29" selection-start-line="56" selection-start-column="29" selection-end-line="56" selection-end-column="29" />
+              <caret line="67" column="4" selection-start-line="67" selection-start-column="4" selection-end-line="68" selection-end-column="34" />
               <folding>
                 <element signature="e#479#511#0" expanded="true" />
               </folding>
@@ -518,7 +518,13 @@
       <option name="project" value="LOCAL" />
       <updated>1464159265075</updated>
     </task>
-    <option name="localTasksCounter" value="26" />
+    <task id="LOCAL-00026" summary="male option changed to gender option">
+      <created>1464159459035</created>
+      <option name="number" value="00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1464159459035</updated>
+    </task>
+    <option name="localTasksCounter" value="27" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -582,7 +588,8 @@
     <MESSAGE value="concatDf_to_meanDf added" />
     <MESSAGE value="saveMeanDf option added to argparse" />
     <MESSAGE value="male argparse option is added" />
-    <option name="LAST_COMMIT_MESSAGE" value="male argparse option is added" />
+    <MESSAGE value="male option changed to gender option" />
+    <option name="LAST_COMMIT_MESSAGE" value="male option changed to gender option" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -792,7 +799,7 @@
     <entry file="file://$PROJECT_DIR$/test.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="56" column="29" selection-start-line="56" selection-start-column="29" selection-end-line="56" selection-end-column="29" />
+          <caret line="67" column="4" selection-start-line="67" selection-start-column="4" selection-end-line="68" selection-end-column="34" />
           <folding>
             <element signature="e#479#511#0" expanded="true" />
           </folding>
@@ -801,8 +808,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/freesurfer_summary.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.5205696">
-          <caret line="830" column="60" selection-start-line="830" selection-start-column="60" selection-end-line="830" selection-end-column="60" />
+        <state vertical-scroll-proportion="0.27373418">
+          <caret line="825" column="30" selection-start-line="825" selection-start-column="30" selection-end-line="825" selection-end-column="30" />
           <folding />
         </state>
       </provider>
