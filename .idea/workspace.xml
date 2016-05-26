@@ -5,11 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="8aaea901-96fc-4c62-bae4-1bd73618c4b3" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/misc.xml" afterPath="$PROJECT_DIR$/.idea/misc.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/valueExtraction.iml" afterPath="$PROJECT_DIR$/.idea/valueExtraction.iml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/freesurfer_summary.py" afterPath="$PROJECT_DIR$/freesurfer_summary.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test.py" afterPath="$PROJECT_DIR$/test.py" />
     </list>
     <ignored path="valueExtraction.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -23,7 +20,7 @@
   </component>
   <component name="ChangesViewManager" flattened_view="true" show_ignored="false" />
   <component name="CoverageDataManager">
-    <SUITE FILE_PATH="coverage/valueExtraction$test.coverage" NAME="test Coverage Results" MODIFIED="1464222143713" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/valueExtraction$test.coverage" NAME="test Coverage Results" MODIFIED="1464222918214" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
   <component name="CreatePatchCommitExecutor">
     <option name="PATCH_PATH" value="" />
@@ -49,8 +46,8 @@
           <file leaf-file-name="test.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/test.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="431">
-                  <caret line="82" column="33" selection-start-line="82" selection-start-column="33" selection-end-line="82" selection-end-column="33" />
+                <state relative-caret-position="356">
+                  <caret line="78" column="0" selection-start-line="78" selection-start-column="0" selection-end-line="78" selection-end-column="0" />
                   <folding />
                 </state>
               </provider>
@@ -63,8 +60,8 @@
           <file leaf-file-name="freesurfer_summary.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/freesurfer_summary.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="166">
-                  <caret line="172" column="19" selection-start-line="172" selection-start-column="19" selection-end-line="172" selection-end-column="19" />
+                <state relative-caret-position="301">
+                  <caret line="313" column="72" selection-start-line="313" selection-start-column="72" selection-end-line="313" selection-end-column="72" />
                   <folding />
                 </state>
               </provider>
@@ -588,7 +585,14 @@
       <option name="project" value="LOCAL" />
       <updated>1464160563355</updated>
     </task>
-    <option name="localTasksCounter" value="29" />
+    <task id="LOCAL-00029" summary="test mini working version">
+      <created>1464222214790</created>
+      <option name="number" value="00029" />
+      <option name="presentableId" value="LOCAL-00029" />
+      <option name="project" value="LOCAL" />
+      <updated>1464222214790</updated>
+    </task>
+    <option name="localTasksCounter" value="30" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -630,7 +634,6 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="OFFER_MOVE_TO_ANOTHER_CHANGELIST_ON_PARTIAL_COMMIT" value="false" />
-    <MESSAGE value="prac" />
     <MESSAGE value="Removed commented lines" />
     <MESSAGE value="argparse default value added" />
     <MESSAGE value="there is no column called roi. roi is index" />
@@ -655,7 +658,8 @@
     <MESSAGE value="male option changed to gender option" />
     <MESSAGE value="argparse running changed&#10;" />
     <MESSAGE value="concatDf_to_meanDf edited to include gender column" />
-    <option name="LAST_COMMIT_MESSAGE" value="concatDf_to_meanDf edited to include gender column" />
+    <MESSAGE value="test mini working version" />
+    <option name="LAST_COMMIT_MESSAGE" value="test mini working version" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -878,8 +882,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/test.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="431">
-          <caret line="82" column="33" selection-start-line="82" selection-start-column="33" selection-end-line="82" selection-end-column="33" />
+        <state relative-caret-position="356">
+          <caret line="78" column="0" selection-start-line="78" selection-start-column="0" selection-end-line="78" selection-end-column="0" />
           <folding />
         </state>
       </provider>

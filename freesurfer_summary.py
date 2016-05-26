@@ -311,7 +311,7 @@ def draw_thickness_detailed(infoDf, meanDf, subjName, meanDfName):
     plt.setp(labels, rotation=30)
     labels = lh_g.get_xticklabels()
     plt.setp(labels, rotation=30)
-    fig.savefig('/ccnc/mri_team/'+os.path.basename(subjName))
+    fig.savefig('/ccnc/mri_team/'+os.path.basename(subjName)+'_thickness')
 
 def draw_thickness(infoDf,meanDf, subjName, meanDfName, subject_loc):
     infoDf['roi'] = infoDf.subroi.str[3:]
@@ -845,10 +845,11 @@ if __name__ == '__main__':
 
     print meanDf
 
+    subjectInitials = raw_input('Subject initial :')
     # Graph
     draw_thickness_detailed(infoDf,
                             meanDf,
-                            os.path.basename(os.path.abspath(args.inputDir)),
+                            subjectInitials,
                             'CCNC_mean')
 
 
