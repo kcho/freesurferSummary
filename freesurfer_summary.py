@@ -7,7 +7,7 @@ import sys
 import pandas as pd
 import matplotlib.pyplot as plt
 import argparse
-import valueSwap
+#import valueSwap
 import textwrap
 sys.path.append('/ccnc_bin')
 import ccncpy.ccncpy as ccncpy
@@ -23,7 +23,6 @@ def get_freesurferDir(dir):
 
     freesurfer_dir = ccncpy.subDirSearch(FS_description,
                                          dir)
-
     if len(freesurfer_dir) > 1:
         print 'Please choose one data'
         print '======================'
@@ -173,7 +172,7 @@ def draw_thickness_detailed(infoDf, meanDf, subjName, meanDfName):
 
     lh_g.set_xlabel('Left', fontsize=16)
 
-    lh_g.set_ylim(1.0, 4.7)
+    lh_g.set_ylim(1.0, 5)
 
     lh_g.set_xticks(range(len(label)))
     lh_g.set_xticklabels(['' for x in label])
@@ -249,7 +248,7 @@ def draw_thickness_detailed(infoDf, meanDf, subjName, meanDfName):
 
     #rh_g.set_xticklabels(label)
     rh_g.set_xlabel('Right', fontsize=16)
-    rh_g.set_ylim(1, 4.7)
+    rh_g.set_ylim(1, 5)
     rh_g.set_xlim(-.5, 32.5)
     rh_g.set_xticks(range(len(label)))
     rh_g.set_xticklabels(label)
@@ -420,6 +419,12 @@ def dictWithTuple2df(infoDict):
 def getInfoFromLabel(freesurfer_dir,roiDict):
     infoDict={}
 
+    os.environ["FREESURFER_HOME"] = '/Applications/freesurfer'
+    os.environ["SUBJECTS_DIR"] = os.path.dirname(freesurfer_dir)
+
+    print 'freesurfer_dir',freesurfer_dir
+    print 'roiDict', roiDict
+
     pbar = ProgressBar().start()
     totalNum = 2 * len(roiDict.keys())
     num = 1
@@ -441,11 +446,12 @@ def getInfoFromLabel(freesurfer_dir,roiDict):
                     cortex=cortex,
                     name=os.path.basename(freesurfer_dir)
                 )
-
+            print command
             output=os.popen(re.sub('\s+',' ',command)).read()
             pbar.update((num/totalNum) * 100)
             num+=1
 
+            print 'output', output
             thickness = re.search('thickness\s+=\s+(\S+)\s+mm\s+\S+\s+(\S+)', output).group(1,2)
             numvert = re.search('number of vertices\s+=\s+(\S+)', output).group(1)
             surfarea = re.search('total surface area\s+=\s+(\S+)', output).group(1)
@@ -512,7 +518,7 @@ def collectStats_v2(freesurfer_dir):
     #collectStats('ha','ho',ha')
 
     # cortical regions as a dictionary
-    roiDict = get_cortical_rois_detailed()
+    roiDict = get_cortical_rois()
 
     # freesurfer sub-directory description
 
@@ -812,6 +818,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    print 'hahaha'
     # Main subject
     main_freesurferDir = get_freesurferDir(os.path.abspath(args.inputDir))
     print main_freesurferDir
@@ -829,9 +836,9 @@ if __name__ == '__main__':
         meanDf = concatDf_to_meanDf(concatDf)
         if args.saveMeanDf:
             meanDf.to_csv(args.saveMeanDf)
-    elif args.gender.upper() == 'M':
+    elif args.gender == 'M':
         meanDf = pd.read_csv('/ccnc_bin/meanThickness/male_df.csv', index_col=0)
-    elif args.gender.upper() == 'F':
+    elif args.gender == 'F':
         meanDf = pd.read_csv('/ccnc_bin/meanThickness/female_df.csv', index_col=0)
     else:
         meanDf = pd.read_csv('/ccnc_bin/meanThickness/detailed_mean_2015_12_28.csv', index_col=0)

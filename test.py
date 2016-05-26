@@ -46,7 +46,10 @@ import os
 # print infoDf
 
 
-main_freesurferDir = '/Users/kcho/T1/FREESURFER'
+#main_freesurferDir = '/Users/kcho/T1/FREESURFER'
+main_freesurferDir = '/Volumes/promise/nas_BackUp/CCNC_MRI_3T/DNO/DNO46_KJU'
+
+main_freesurferDir = get_freesurferDir(main_freesurferDir)
 
 print main_freesurferDir
 os.environ["FREESURFER_HOME"] = '/Applications/freesurfer'
@@ -57,20 +60,21 @@ meanDf = pd.read_csv('/ccnc_bin/meanThickness/detailed_mean_2015_12_28.csv', ind
 roiDict = get_cortical_rois()
 
 infoDf = collectStats_v2(main_freesurferDir)#background_subject_locs)
+print infoDf
 subjName = 'ha'
 
 
 # print infoDf
 
-freesuferList = subjDirs_to_fsDirs(['/Users/kcho/T1/NOR60_KSH',
-                                    '/Users/kcho/T1/FREESURFER'])
+freesuferList = subjDirs_to_fsDirs(['/Volumes/promise/nas_BackUp/CCNC_MRI_3T/DNO/DNO46_KJU',
+                                    '/Volumes/promise/nas_BackUp/CCNC_MRI_3T/DNO/DNO46_KJU'])
 print freesuferList
 concatDf = concatFsDf(freesuferList)
 meanDf = concatDf_to_meanDf(concatDf)
 
 draw_thickness_detailed(infoDf,
                         meanDf,
-                        os.path.basename(main_freesurferDir),
+                        'prac_subj',
                         'CCNC_mean')
 
 
