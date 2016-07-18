@@ -7,7 +7,7 @@ import sys
 import pandas as pd
 import matplotlib.pyplot as plt
 import argparse
-#import valueSwap
+import valueSwap
 import textwrap
 sys.path.append('/ccnc_bin')
 import ccncpy.ccncpy as ccncpy
@@ -125,9 +125,13 @@ def draw_thickness_detailed(infoDf, meanDf, subjName, meanDfName):
 
     infoDf['roi'] = infoDf.subroi.str[3:]
     infoDf['region'] = infoDf.roi.apply(getRegion)
+
     meanDf['roi'] = meanDf.subroi.str[3:]
     meanDf = meanDf.groupby(['roi','side']).mean().reset_index()
     meanDf['region'] = meanDf.roi.apply(getRegion)
+    print meanDf.head()
+    meanDf.columns = ['roi','side','thickavg','thickstd','region']
+
 
     gb = infoDf.groupby('region')
     infoDf = pd.concat([gb.get_group('LPFC'),
@@ -138,6 +142,7 @@ def draw_thickness_detailed(infoDf, meanDf, subjName, meanDfName):
                         gb.get_group('SMC'),
                         gb.get_group('PC'),
                         gb.get_group('OCC')])
+
 
     gbmean = meanDf.groupby('region')
     meanDf = pd.concat([gbmean.get_group('LPFC'),
@@ -518,7 +523,7 @@ def collectStats_v2(freesurfer_dir):
     #collectStats('ha','ho',ha')
 
     # cortical regions as a dictionary
-    roiDict = get_cortical_rois()
+    roiDict = get_cortical_rois_detailed()
 
     # freesurfer sub-directory description
 
@@ -818,12 +823,9 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    print 'hahaha'
     # Main subject
     main_freesurferDir = get_freesurferDir(os.path.abspath(args.inputDir))
-    print main_freesurferDir
     infoDf = collectStats_v2(main_freesurferDir)
-    print infoDf
 
     # Freesurfer environment Settings
     # os.environ["FREESURFER_HOME"] = '/Applications/freesurfer'
@@ -843,7 +845,6 @@ if __name__ == '__main__':
     else:
         meanDf = pd.read_csv('/ccnc_bin/meanThickness/detailed_mean_2015_12_28.csv', index_col=0)
 
-    print meanDf
 
     subjectInitials = raw_input('Subject initial :')
     # Graph
@@ -852,6 +853,9 @@ if __name__ == '__main__':
                             subjectInitials,
                             'CCNC_mean')
 
+    valueSwap.main(main_freesurfer_dir, 
+                   os.path.join(main_freesurfer_dir,
+                    'tmp/thick_kev_detailed.csv'))
 
 
 

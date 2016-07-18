@@ -5,6 +5,7 @@ from nilearn import datasets
 from nilearn import plotting
 import nipype.interfaces.freesurfer as fs          # fsl
 import pandas as pd
+import sys
 pd.set_option('max_rows', 5000)
 
 def labelValueSwap(labelLoc, newNum):
@@ -262,6 +263,7 @@ def main(freesurferLoc,indcsv):
 
 
 if __name__=='__main__':
-    main('/Volumes/promise/CCNC_MRI_3T/NOR/NOR103_SHS/baseline/FREESURFER',
-            '/Volumes/promise/CCNC_MRI_3T/NOR/NOR103_SHS/baseline/FREESURFER/tmp/thick_kev_detailed.csv')
+    main(sys.argv[1], sys.argv[2])
 
+    #main('/Volumes/promise/CCNC_MRI_3T/NOR/NOR103_SHS/baseline/FREESURFER',
+            #'/Volumes/promise/CCNC_MRI_3T/NOR/NOR103_SHS/baseline/FREESURFER/tmp/thick_kev_detailed.csv')
