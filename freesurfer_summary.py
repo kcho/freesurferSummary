@@ -2,13 +2,12 @@
 from __future__ import division
 __author__ = 'kcho'
 import re
-import os
+from os.path import join, basename, dirname
 import sys
 import pandas as pd
 import matplotlib.pyplot as plt
 import argparse
 import textwrap
-
 from progressbar import ProgressBar
 import time
 
@@ -17,8 +16,9 @@ plt.style.use('ggplot')
 def main(args):
     infoDf = collectStats(args.fsDir)
 
-    meanDf = pd.read_csv('/ccnc_bin/meanThickness/detailed_mean_2015_12_28.csv', 
-                         index_col=0)
+    meanDfLoc = '/ccnc_bin/meanThickness/detailed_mean_2015_12_28.csv'
+    meanDf = pd.read_csv(meanDfLoc, index_col=0)
+
     subjectInitials = raw_input('Subject initial :')
 
     # Graph
@@ -27,8 +27,8 @@ def main(args):
                             subjectInitials,
                             'CCNC_mean')
 
-    # valueSwap.main(main_freesurfer_dir, 
-                   # os.path.join(main_freesurfer_dir,
+    # valueSwap.main(main_fsDir, 
+                   # join(main_fsDir,
                     # 'tmp/thick_kev_detailed.csv'))
 
 
@@ -232,7 +232,7 @@ def draw_thickness_detailed(infoDf, meanDf, subjName, meanDfName):
     plt.setp(labels, rotation=30)
     labels = lh_g.get_xticklabels()
     plt.setp(labels, rotation=30)
-    fig.savefig('/ccnc/mri_team/'+os.path.basename(subjName)+'_thickness')
+    fig.savefig('/ccnc/mri_team/'+basename(subjName)+'_thickness')
 
 
 # def main(subject_loc, background_subject_locs, graph, meanDfLoc,verbose, brain):
@@ -291,17 +291,17 @@ def draw_thickness_detailed(infoDf, meanDf, subjName, meanDfName):
     
     # if graph:
         # if verbose:
-            # thicknessDf = collectStats_v2([os.path.dirname(freesurfer_dir)])#background_subject_locs)
-            # draw_thickness_detailed(thicknessDf,meanDf,os.path.basename(subject_loc), meanDfName, subject_loc)
+            # thicknessDf = collectStats_v2([dirname(fsDir)])#background_subject_locs)
+            # draw_thickness_detailed(thicknessDf,meanDf,basename(subject_loc), meanDfName, subject_loc)
         # else:
-            # thicknessDf = collectStats([os.path.dirname(freesurfer_dir)])#background_subject_locs)
-            # draw_thickness(thicknessDf,meanDf,os.path.basename(subject_loc), meanDfName, subject_loc)
+            # thicknessDf = collectStats([dirname(fsDir)])#background_subject_locs)
+            # draw_thickness(thicknessDf,meanDf,basename(subject_loc), meanDfName, subject_loc)
 
 
     # if brain:
         # if verbose:
-            # valueSwap.main(freesurfer_dir, 
-                    # os.path.join(freesurfer_dir,
+            # valueSwap.main(fsDir, 
+                    # join(fsDir,
                         # 'tmp/thick_kev_detailed.csv'))
         # else:
             # print 'Please select verbose mode'
@@ -416,11 +416,14 @@ def dictWithTuple2df(infoDict):
 
 
 
-def getInfoFromLabel(freesurfer_dir,roiDict):
+def getInfoFromLabel(fsDir,roiDict):
+    '''
+    Change this function to use pandas and numpy
+    '''
+
     infoDict={}
 
-
-    print 'freesurfer_dir',freesurfer_dir
+    print 'fsDir',fsDir
     print 'roiDict', roiDict
 
     pbar = ProgressBar().start()
@@ -431,18 +434,18 @@ def getInfoFromLabel(freesurfer_dir,roiDict):
             if len(rois) > 1:
                 command = 'mris_anatomical_stats \
                 -l {loc}/{side}_{cortex} {name} {side} 2>/dev/null'.format(
-                    loc=os.path.join(freesurfer_dir,'tmp'),
+                    loc=join(fsDir,'tmp'),
                     side=side,
                     cortex=cortex,
-                    name=os.path.basename(freesurfer_dir)
+                    name=basename(fsDir)
                 )
             else:
                 command = 'mris_anatomical_stats \
                 -l {loc}/{side}.{cortex}.label {name} {side} 2>/dev/null'.format(
-                    loc=os.path.join(freesurfer_dir,'tmp'),
+                    loc=join(fsDir,'tmp'),
                     side=side,
                     cortex=cortex,
-                    name=os.path.basename(freesurfer_dir)
+                    name=basename(fsDir)
                 )
             print command
             output=os.popen(re.sub('\s+',' ',command)).read()
@@ -460,51 +463,64 @@ def getInfoFromLabel(freesurfer_dir,roiDict):
             curvind = re.search('intrinsic curvature index\s+=\s+(\S+)', output).group(1)
 
             thickness = tuple([float(x) for x in thickness])
-            for i in numvert, surfarea, grayvol, meancurv, gauscurv, foldind, curvind:
-                i = float(i)
-
-            infoDict[side+'_'+cortex] = [numvert, surfarea, grayvol,
+            infoDict[side+'_'+cortex] = [float(x) for x in [numvert, surfarea, grayvol,
                                               thickness[0], thickness[1],
-                                              meancurv, gauscurv, foldind, curvind]
-            #print cortex, rois, thicknessDict[side+'_'+cortex]
+                                              meancurv, gauscurv, foldind, curvind]]
     pbar.finish()
     return infoDict
 
 
-def mergeLabel(freesurfer_dir, roiDict):
+def mergeLabel(fsDir, roiDict):
+    '''
+    Merge labels into one label
+    '''
+
     for side in ['lh','rh']:
         for cortex, rois in roiDict.iteritems():
-            command = 'mri_mergelabels {inLabel} -o {outLabel} 2>/dev/null'.format(
-                inLabel = ' '.join(['-i '+os.path.join(freesurfer_dir,'tmp',side+'.'+x+'.label') for x in rois]),
-                outLabel = os.path.join(freesurfer_dir,'tmp',side+'_'+cortex))
+            inLabelLocs = [join(fsDir,'tmp',side+'.'+x+'.label') for x in rois]
+            inLabelForms = ' '.join(['-i '+x for x in inLabel])
+            outLabel = join(fsDir,'tmp',side+'_'+cortex)
+
+            command = 'mri_mergelabels \
+                    {inLabel} \
+                    -o {outLabel} \
+                    2>/dev/null'.format(inLabel = inLabelForms,
+                                        outLabel = outLabel)
             os.popen(command).read()
 
 
-def makeLabel(freesurfer_dir):
+def makeLabel(fsDir):
     '''
     Run mri_annotation2label for lh and rh hemisphere.
-    Creates labels in $freesurfer_dir/tmp
+    Creates labels in $fsDir/tmp
     '''
-    os.environ["FREESURFER_HOME"] = '/usr/local/freesurfer'
-    os.environ["SUBJECTS_DIR"] = os.path.dirname(freesurfer_dir)
+
+    fsDirName = basename(fsDir)
+    labelOutDir = join(fsDir, 'tmp')
 
     for side in ['lh','rh']:
         command = 'mri_annotation2label \
             --subject {basename} \
-            --hemi {side} --outdir {outDir} 2>/dev/null'.format(basename=os.path.basename(freesurfer_dir),
-                                                    side=side,
-                                                    outDir=os.path.join(freesurfer_dir,'tmp'))
+            --hemi {side} \
+            --outdir {outDir} \
+                2>/dev/null'.format(basename=fsDirName, 
+                                    side=side, 
+                                    outDir=labelOutDir)
+
         os.popen(re.sub('\s+',' ',command)).read()
 
         command = 'mri_annotation2label \
             --subject {basename} \
-            --hemi {side} --outdir {outDir} --ctab {outDir}/{side}_ctab.txt 2>/dev/null'.format(basename=os.path.basename(freesurfer_dir),
-                                                    side=side,
-                                                    outDir=os.path.join(freesurfer_dir,'tmp'))
-        print command
+            --hemi {side} \
+            --outdir {outDir} \
+            --ctab {outDir}/{side}_ctab.txt \
+                2>/dev/null'.format(basename=fsDirName, 
+                                    side=side, 
+                                    outDir=labelOutDir)
+
         os.popen(re.sub('\s+',' ',command)).read()
 
-def collectStats(freesurfer_dir):
+def collectStats(fsDir):
     '''
     CollectStats
     Summarise cortical thickness in more than one subjects.
@@ -514,24 +530,25 @@ def collectStats(freesurfer_dir):
     2. Merges labels according to the roiDict using mergeLabel
     3. Estimates cortical thickness in each merged labels (dict)
     4. Converts dict to pandas Dataframe using dictWithTuple2df
-    5. save df to freesurfer_dir/tmp/thick_kev_detailed.csv
+    5. save df to fsDir/tmp/thick_kev_detailed.csv
     Than mean df is returned.
     '''
+
+    # FREESURFER settings
+    os.environ["FREESURFER_HOME"] = '/usr/local/freesurfer'
+    os.environ["SUBJECTS_DIR"] = dirname(fsDir)
 
     # cortical regions as a dictionary
     roiDict = get_cortical_rois_detailed()
 
-    # freesurfer sub-directory description
-
-    if not os.path.isfile(os.path.join(freesurfer_dir,'tmp','thick_kev_detailed_new.csv')):
-        makeLabel(freesurfer_dir)
-        mergeLabel(freesurfer_dir, roiDict)
-        infoDict = getInfoFromLabel(freesurfer_dir, roiDict)
+    if not os.path.isfile(join(fsDir,'tmp','thick_kev_detailed_new.csv')):
+        makeLabel(fsDir)
+        mergeLabel(fsDir, roiDict)
+        infoDict = getInfoFromLabel(fsDir, roiDict)
         infoDf = dictWithTuple2df(infoDict)
-        infoDf.to_csv(os.path.join(freesurfer_dir,'tmp','thick_kev_detailed_new.csv'))
-
+        infoDf.to_csv(join(fsDir,'tmp','thick_kev_detailed_new.csv'))
     else:
-        infoDf = pd.read_csv(os.path.join(freesurfer_dir,'tmp','thick_kev_detailed_new.csv'),
+        infoDf = pd.read_csv(join(fsDir,'tmp','thick_kev_detailed_new.csv'),
                              index_col=0)
 
     # return mean
@@ -569,13 +586,13 @@ def getSummary(volumeDf,roiDict):
 
     return volumeDf
 
-def openStatsTable(freesurfer_dir):
-    statsROI = os.path.join(freesurfer_dir,'stats')
+def openStatsTable(fsDir):
+    statsROI = join(fsDir,'stats')
     filesToRead = 'aparc.stats'
 
     dfList = []
     for side in ['lh','rh']:
-        statsFile = os.path.join(statsROI,side+'.'+filesToRead)
+        statsFile = join(statsROI,side+'.'+filesToRead)
         with open(statsFile,'r') as f:
             lines = f.readlines()
 
@@ -714,7 +731,7 @@ if __name__ == '__main__':
             {codeName} : 
             ========================================
             eg) {codeName} --input {in_put} --output {output}
-            '''.format(codeName=os.path.basename(__file__),
+            '''.format(codeName=basename(__file__),
                        in_put = 'subjectLoc',
                        output = 'outLoc')))
 
@@ -727,6 +744,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     os.environ["FREESURFER_HOME"] = '/usr/local/freesurfer'
-    os.environ["SUBJECTS_DIR"] = os.path.dirname(os.path.dirname(args.fsDir))
+    os.environ["SUBJECTS_DIR"] = dirname(dirname(args.fsDir))
+
     main(args)
 
