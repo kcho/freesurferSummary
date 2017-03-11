@@ -1,6 +1,8 @@
 #!/ccnc_bin/mini_env/bin/python
-from __future__ import division
+
 __author__ = 'kcho'
+
+from __future__ import division
 import re
 from os.path import join, basename, dirname
 import sys
@@ -13,7 +15,7 @@ import time
 
 plt.style.use('ggplot')
 
-def main(args):
+def freesurferSummary(args):
     infoDf = collectStats(args.fsDir)
 
     meanDfLoc = '/ccnc_bin/meanThickness/detailed_mean_2015_12_28.csv'
@@ -534,9 +536,9 @@ def collectStats(fsDir):
     Than mean df is returned.
     '''
 
-    # FREESURFER settings
-    os.environ["FREESURFER_HOME"] = '/usr/local/freesurfer'
-    os.environ["SUBJECTS_DIR"] = dirname(fsDir)
+    ## FREESURFER settings
+    #os.environ["FREESURFER_HOME"] = '/usr/local/freesurfer'
+    #os.environ["SUBJECTS_DIR"] = dirname(fsDir)
 
     # cortical regions as a dictionary
     roiDict = get_cortical_rois_detailed()
@@ -746,5 +748,5 @@ if __name__ == '__main__':
     os.environ["FREESURFER_HOME"] = '/usr/local/freesurfer'
     os.environ["SUBJECTS_DIR"] = dirname(dirname(args.fsDir))
 
-    main(args)
+    freesurferSummary(args)
 
