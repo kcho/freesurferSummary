@@ -35,14 +35,20 @@ def freesurferSummary(args):
                     # 'tmp/thick_kev_detailed.csv'))
 
 
+def getRegion(roi):
+    '''
+    find region of the detailed freesurfer label
+    eg) regions : 'LPFC', 'OFC', 'MPFC', 'LTC', 'MTC', 'SMC', 'PC' or 'OCC'
+    '''
+    roiDict = get_cortical_rois()
+    for region, roiList in roiDict.iteritems():
+        if roi in roiList:
+            return region
+
 def draw_thickness_detailed(fsDir, infoDf, meanDf, subjName, meanDfName):
+    # graph order from left
     roiOrder = ['LPFC', 'OFC', 'MPFC', 'LTC', 'MTC', 'SMC', 'PC', 'OCC']
 
-    def getRegion(roi):
-        roiDict = get_cortical_rois()
-        for region, roiList in roiDict.iteritems():
-            if roi in roiList:
-                return region
 
     infoDf['roi'] = infoDf.subroi.str[3:]
     infoDf['region'] = infoDf.roi.apply(getRegion)
@@ -50,7 +56,7 @@ def draw_thickness_detailed(fsDir, infoDf, meanDf, subjName, meanDfName):
     meanDf['roi'] = meanDf.subroi.str[3:]
     meanDf = meanDf.groupby(['roi','side']).mean().reset_index()
     meanDf['region'] = meanDf.roi.apply(getRegion)
-    print meanDf.head()
+    # print meanDf.head()
     meanDf.columns = ['roi','side','thickavg','thickstd','region']
 
 
@@ -62,7 +68,8 @@ def draw_thickness_detailed(fsDir, infoDf, meanDf, subjName, meanDfName):
                         gb.get_group('MTC'),
                         gb.get_group('SMC'),
                         gb.get_group('PC'),
-                        gb.get_group('OCC')])
+                        gb.get_group('OCC')]).reset_index()
+    print infoDf
 
 
     gbmean = meanDf.groupby('region')
@@ -73,7 +80,8 @@ def draw_thickness_detailed(fsDir, infoDf, meanDf, subjName, meanDfName):
                         gbmean.get_group('MTC'),
                         gbmean.get_group('SMC'),
                         gbmean.get_group('PC'),
-                        gbmean.get_group('OCC')])
+                        gbmean.get_group('OCC')]).reset_index()
+    print meanDf
 
     gb = infoDf.groupby('side')
     label = infoDf.subroi.str[3:].unique()
@@ -83,18 +91,21 @@ def draw_thickness_detailed(fsDir, infoDf, meanDf, subjName, meanDfName):
 
     lh_g = plt.subplot2grid((2,2),(0, 0), colspan=2)
     rh_g = plt.subplot2grid((2,2),(1, 0), colspan=2)
-    lh_g.plot(gb.get_group('lh')['thickavg'],'r',label=subjName)
 
-    lh_g.plot(meanDf.groupby('side').get_group('lh')['thickavg'],'r--',label=meanDfName)
+    lh_g.plot(infoDf.groupby('side').get_group('lh').index,
+             infoDf.groupby('side').get_group('lh').thickavg,
+            label=subjName)
+    # lh_g.plot(infoDf.groupby('side').get_group('lh')['thickavg'],'r',label=subjName)
+    # lh_g.plot(meanDf.groupby('side').get_group('lh')['thickavg'],'r--',label=meanDfName)
 
     # error bar
 
-    eb1 = lh_g.errorbar(range(len(meanDf.roi.unique())),
-                        meanDf.groupby('side').get_group('lh')['thickavg'],
-                        meanDf.groupby('side').get_group('lh')['thickstd'],
-                        linestyle='None',
-                        marker='^')
-    eb1[-1][0].set_linestyle('--')
+    # eb1 = lh_g.errorbar(range(len(meanDf.roi.unique())),
+                        # meanDf.groupby('side').get_group('lh')['thickavg'],
+                        # meanDf.groupby('side').get_group('lh')['thickstd'],
+                        # linestyle='None',
+                        # marker='^')
+    # eb1[-1][0].set_linestyle('--')
 
     lh_g.set_xlabel('Left', fontsize=16)
 
