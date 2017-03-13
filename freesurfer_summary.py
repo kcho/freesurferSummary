@@ -1,8 +1,8 @@
 #!/ccnc_bin/mini_env/bin/python
+from __future__ import division
 
 __author__ = 'kcho'
-
-from __future__ import division
+import os
 import re
 from os.path import join, basename, dirname
 import sys
@@ -24,7 +24,8 @@ def freesurferSummary(args):
     subjectInitials = raw_input('Subject initial :')
 
     # Graph
-    draw_thickness_detailed(infoDf,
+    draw_thickness_detailed(args.fsDir,
+                            infoDf,
                             meanDf,
                             subjectInitials,
                             'CCNC_mean')
@@ -34,7 +35,7 @@ def freesurferSummary(args):
                     # 'tmp/thick_kev_detailed.csv'))
 
 
-def draw_thickness_detailed(infoDf, meanDf, subjName, meanDfName):
+def draw_thickness_detailed(fsDir, infoDf, meanDf, subjName, meanDfName):
     roiOrder = ['LPFC', 'OFC', 'MPFC', 'LTC', 'MTC', 'SMC', 'PC', 'OCC']
 
     def getRegion(roi):
@@ -234,7 +235,7 @@ def draw_thickness_detailed(infoDf, meanDf, subjName, meanDfName):
     plt.setp(labels, rotation=30)
     labels = lh_g.get_xticklabels()
     plt.setp(labels, rotation=30)
-    fig.savefig('/ccnc/mri_team/'+basename(subjName)+'_thickness')
+    fig.savefig(join(fsDir, basename(subjName)+'_thickness'))
 
 
 # def main(subject_loc, background_subject_locs, graph, meanDfLoc,verbose, brain):
