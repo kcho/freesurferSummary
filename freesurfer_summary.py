@@ -64,17 +64,18 @@ def draw_thickness_detailed(fsDir, infoDf, meanDf, subjName, meanDfName):
     meanDf['region'] = meanDf.roi.apply(getRegion)
     meanDf.columns = ['roi','side','thickavg','thickstd','region']
 
+    # Reorder Dfs
     infoDf = reorder_df(infoDf, 'region', roiOrder)
     meanDf  = reorder_df(meanDf, 'region', roiOrder)
 
-    gb = infoDf.groupby('side')
+    infoDf_side_gb = infoDf.groupby('side')
     label = infoDf.subroi.str[3:].unique()
 
-    fig = plt.figure(figsize=(22,12))
+    fig, (lh_g, rh_g) = plt.subplots(nrows=2, figsize=(22,12))
     fig.suptitle("Cortical thickness in all regions", fontsize=20)
 
-    lh_g = plt.subplot2grid((2,2),(0, 0), colspan=2)
-    rh_g = plt.subplot2grid((2,2),(1, 0), colspan=2)
+    # lh_g = plt.subplot2grid((2,2),(0, 0), colspan=2)
+    # rh_g = plt.subplot2grid((2,2),(1, 0), colspan=2)
 
     lh_g.plot(infoDf.groupby('side').get_group('lh').index,
              infoDf.groupby('side').get_group('lh').thickavg,
@@ -136,7 +137,7 @@ def draw_thickness_detailed(fsDir, infoDf, meanDf, subjName, meanDfName):
 
     ## annotation
     mergedDf = pd.merge(meanDf.groupby('side').get_group('lh'),
-                        gb.get_group('lh'),
+                        infoDf_side_gb.get_group('lh'),
                         on=['roi','side','region'],
                         how='inner')
 
@@ -150,7 +151,7 @@ def draw_thickness_detailed(fsDir, infoDf, meanDf, subjName, meanDfName):
                 fontsize=20)
 
 
-    rh_g.plot(gb.get_group('rh')['thickavg'],'b',label=subjName)
+    rh_g.plot(infoDf_side_gb.get_group('rh')['thickavg'],'b',label=subjName)
     rh_g.plot(meanDf.groupby('side').get_group('rh')['thickavg'],'b--',label=meanDfName)
 
     #error bar
@@ -210,7 +211,7 @@ def draw_thickness_detailed(fsDir, infoDf, meanDf, subjName, meanDfName):
 
     ## annotation
     mergedDf = pd.merge(meanDf.groupby('side').get_group('rh'),
-                        gb.get_group('rh'),
+                        infoDf_side_gb.get_group('rh'),
                         on=['roi','side','region'],
                         how='inner')
 
