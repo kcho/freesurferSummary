@@ -12,6 +12,7 @@ import argparse
 import textwrap
 from progressbar import ProgressBar
 import time
+import tksurferCapture
 
 plt.style.use('ggplot')
 
@@ -30,9 +31,9 @@ def freesurferSummary(args):
                             subjectInitials,
                             'CCNC_mean')
 
-    # valueSwap.main(main_fsDir, 
-                   # join(main_fsDir,
-                    # 'tmp/thick_kev_detailed.csv'))
+    tksurferCapture.main(main_fsDir, 
+                   join(main_fsDir,
+                    'tmp/thick_kev_detailed.csv'))
 
 
 def getRegion(roi):
