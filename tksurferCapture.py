@@ -91,23 +91,33 @@ def makeBrainPic(freesurfer_dir):
                 'tmp',side+'_tksurfer.tcl')
         #annotFile = os.path.join(freesurfer_dir,
                 #'mri/aparc+aseg.mgz')
+        print freesurfer_dir
 
 
         #print os.path.dirname(freesurfer_dir)
-        shots = fs.SurfaceSnapshots(
-                subject_id=os.path.basename(freesurfer_dir),
-                subjects_dir=os.path.dirname(freesurfer_dir),
-                hemi=side,
-                tcl_script=tcl_script,
-                #annot_file = annotFile, 
-                #overlay_range = (-4,4),
-                #screenshot_stem = freesurfer_dir+'_'+side,
-                six_images = True,
-                surface="inflated")
+        # shots = fs.SurfaceSnapshots(
+                # subject_id=os.path.basename(freesurfer_dir),
+                # subjects_dir=os.path.dirname(freesurfer_dir),
+                # hemi=side,
+                # tcl_script=tcl_script,
+                # #annot_file = annotFile, 
+                # #overlay_range = (-4,4),
+                # #screenshot_stem = freesurfer_dir+'_'+side,
+                # six_images = True,
+                # surface="inflated")
+        command = 'tksurfer {subjid} {side} inflated \
+                -tcl {tcl}'.format(
+                    subjid=os.path.basename(freesurfer_dir),
+                    side=side,
+                    tcl=tcl_script)
+
+        os.environ["FREESURFER_HOME"] = '/usr/local/freesurfer'
         os.environ["SUBJECTS_DIR"] = os.path.dirname(freesurfer_dir)
-        #print shots.cmdline
+
+        # print(shots.cmdline)
         #print "export SUBJECTS_DIR={0}".format(os.path.dirname(freesurfer_dir))
-        os.popen(shots.cmdline).read()
+        # os.popen(shots.cmdline).read()
+        os.popen(command).read()
         #print '*'*80
         #try:
             ##res = shots.run()
