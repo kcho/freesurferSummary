@@ -45,43 +45,27 @@ def getRegion(roi):
         if roi in roiList:
             return region
 
+
+def reorder_df(df, colName, orderList):
+    gb = df.groupby(colName)
+    newDf = pd.concat([gb.get_group(x) for x in orderList])
+    newDf = newDf.reset_index()
+    return newDf
+
 def draw_thickness_detailed(fsDir, infoDf, meanDf, subjName, meanDfName):
     # graph order from left
     roiOrder = ['LPFC', 'OFC', 'MPFC', 'LTC', 'MTC', 'SMC', 'PC', 'OCC']
 
-
+    # Amend information Dfs
     infoDf['roi'] = infoDf.subroi.str[3:]
     infoDf['region'] = infoDf.roi.apply(getRegion)
-
     meanDf['roi'] = meanDf.subroi.str[3:]
     meanDf = meanDf.groupby(['roi','side']).mean().reset_index()
     meanDf['region'] = meanDf.roi.apply(getRegion)
-    # print meanDf.head()
     meanDf.columns = ['roi','side','thickavg','thickstd','region']
 
-
-    gb = infoDf.groupby('region')
-    infoDf = pd.concat([gb.get_group('LPFC'),
-                        gb.get_group('OFC'),
-                        gb.get_group('MPFC'),
-                        gb.get_group('LTC'),
-                        gb.get_group('MTC'),
-                        gb.get_group('SMC'),
-                        gb.get_group('PC'),
-                        gb.get_group('OCC')]).reset_index()
-    print infoDf
-
-
-    gbmean = meanDf.groupby('region')
-    meanDf = pd.concat([gbmean.get_group('LPFC'),
-                        gbmean.get_group('OFC'),
-                        gbmean.get_group('MPFC'),
-                        gbmean.get_group('LTC'),
-                        gbmean.get_group('MTC'),
-                        gbmean.get_group('SMC'),
-                        gbmean.get_group('PC'),
-                        gbmean.get_group('OCC')]).reset_index()
-    print meanDf
+    infoDf = reorder_df(infoDf, 'region', roiOrder)
+    meanDf  = reorder_df(meanDf, 'region', roiOrder)
 
     gb = infoDf.groupby('side')
     label = infoDf.subroi.str[3:].unique()
