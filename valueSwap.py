@@ -207,7 +207,7 @@ def makeAsc(freesurferLoc):
 def main(freesurferLoc,indcsv):
     mergedDf = cleanMean('/ccnc_bin/meanThickness/detailed_mean_2015_12_28.csv', indcsv)
     #standard_ctab = '/ccnc_bin/meanThickness/standard_ctab.txt'
-    standard_ctab = '/Applications/freesurfer/FreeSurferColorLUT.txt'
+    standard_ctab = '/usr/local/freesurfer/FreeSurferColorLUT.txt'
     subject_ctab = os.path.join(freesurferLoc,'ctab.txt')
     shutil.copyfile(standard_ctab, subject_ctab)
 
