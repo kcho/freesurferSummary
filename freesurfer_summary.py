@@ -59,178 +59,191 @@ def draw_thickness_detailed(fsDir, infoDf, meanDf, subjName, meanDfName):
     # Amend information Dfs
     infoDf['roi'] = infoDf.subroi.str[3:]
     infoDf['region'] = infoDf.roi.apply(getRegion)
+
     meanDf['roi'] = meanDf.subroi.str[3:]
     meanDf = meanDf.groupby(['roi','side']).mean().reset_index()
     meanDf['region'] = meanDf.roi.apply(getRegion)
     meanDf.columns = ['roi','side','thickavg','thickstd','region']
 
-    # Reorder Dfs
-    infoDf = reorder_df(infoDf, 'region', roiOrder)
-    meanDf  = reorder_df(meanDf, 'region', roiOrder)
 
-    infoDf_side_gb = infoDf.groupby('side')
-    meanDf_side_gb = meanDf.groupby('side')
-    label = infoDf.subroi.str[3:].unique()
+    # side mean
+    infoDf_gb = infoDf.groupby('side')
+    meanDf_gb = meanDf.groupby('side')
+    label = infoDf.roi.unique()
 
-    fig, (lh_g, rh_g) = plt.subplots(nrows=2, figsize=(22,12))
+    fig, axes = plt.subplots(nrows=2, figsize=(22,12))
     fig.suptitle("Cortical thickness in all regions", fontsize=20)
 
+    for gnum, side in enumerate(['lh', 'rh']):
+        infodf = infoDf_gb.get_group(side)
+        meandf = meanDf_gb.get_group(side)
 
-    lh_g.plot(infoDf_side_gb.get_group('lh').thickavg, 
-              'r',
-              label=subjName)
+        # Reorder Dfs
+        infodf = infodf.sort_values(['roi','side'])
+        meandf = meandf.sort_values(['roi','side'])
+        infodf = reorder_df(infodf, 'region', roiOrder)
+        meandf  = reorder_df(meandf, 'region', roiOrder)
 
-    lh_g.plot(meanDf_side_gb.get_group('lh').thickavg, 
-              'r--',
-              label=subjName)
+        ax = axes[gnum]
 
-    # error bar
-    eb1 = lh_g.errorbar(range(len(meanDf_side_gb.get_group('lh').roi.unique())),
-                        meanDf_side_gb.get_group('lh')['thickavg'],
-                        meanDf_side_gb.get_group('lh')['thickstd'],
-                        linestyle='None',
-                        marker='^')
-    eb1[-1][0].set_linestyle('--')
+        ax.plot(infodf.thickavg, 'r', label=subjName)
+        ax.plot(meandf.thickavg, 'r--', label=subjName)
 
-    lh_g.set_ylim(1.0, 5)
-    lh_g.set_xlabel('Left', fontsize=16)
-    lh_g.set_xticks(range(len(label)))
-    lh_g.set_xticklabels(['' for x in label])
-    lh_g.set_xlim(-.5, 32.5)
+        # error bar
+        eb1 = ax.errorbar(range(len(label)),
+                            meandf.thickavg,
+                            meandf.thickstd,
+                            linestyle='None',
+                            marker='^')
+        eb1[-1][0].set_linestyle('--')
 
-    lh_g.legend()
-    legend = lh_g.legend(frameon = 1)
-    frame = legend.get_frame()
-    frame.set_facecolor('white')
+        ax.set_ylim(1.0, 5)
+        ax.set_xlabel(side, fontsize=16)
+        ax.set_xticks(range(len(label)))
+        ax.set_xticklabels(['' for x in label])
+        ax.set_xlim(-.5, 32.5)
 
-    ######fill
-    roiDict = get_cortical_rois()
-    startNum = 0
-    switch = 0
-    x_starting_point = 0
-    for region in roiOrder:
-        if switch == 0:
-            switch = 1 
-            pass
-            x_starting_point = startNum
-            startNum = startNum + len(roiDict[region])
-
-            lh_g.text((x_starting_point-.5 + startNum-.5)/2, 1.2,
-                    region,
-                    horizontalalignment='center',
-                    alpha=.4,
-                    fontsize=15)
-        else:
-            alpha = 0.2
-            col='green'
-            p = lh_g.axvspan(x_starting_point-.5, startNum-.5, facecolor=col, alpha=alpha)
-            x_starting_point = startNum
-            startNum = startNum + len(roiDict[region])
-            switch = 0 
-
-            lh_g.text((x_starting_point-.5 + startNum-.5)/2, 1.2,
-                    region,
-                    horizontalalignment='center',
-                    alpha=.4,
-                    fontsize=15)
-
-    ## annotation
-    mergedDf = pd.merge(meanDf.groupby('side').get_group('lh'),
-                        infoDf_side_gb.get_group('lh'),
-                        on=['roi','side','region'],
-                        how='inner')
-
-    mergedDf['mean_sub_indv'] = mergedDf.thickavg_x - mergedDf.thickavg_y
-    for row in mergedDf[abs(mergedDf['mean_sub_indv']) > 0.5].iterrows():
-        lh_g.annotate(row[1].roi,
-                xy=(row[0], row[1].thickavg_y),
-                xytext=(row[0], 1.5-row[1].mean_sub_indv/3),
-                arrowprops=dict(facecolor='green', shrink=0.05),
-                horizontalalignment='left',
-                fontsize=20)
+        ax.legend()
+        legend = ax.legend(frameon = 1)
+        frame = legend.get_frame()
+        frame.set_facecolor('white')
 
 
-    rh_g.plot(infoDf_side_gb.get_group('rh')['thickavg'],'b',label=subjName)
-    rh_g.plot(meanDf.groupby('side').get_group('rh')['thickavg'],'b--',label=meanDfName)
+    #####fill
+        roiDict = get_cortical_rois()
+        startNum = 0
+        switch = 0
+        x_starting_point = 0
+        for region in roiOrder:
+            if switch == 0:
+                switch = 1 
+                pass
+                x_starting_point = startNum
+                startNum = startNum + len(roiDict[region])
 
-    #error bar
-    eb2 = rh_g.errorbar(range(len(meanDf.roi.unique())),
-                        meanDf.groupby('side').get_group('rh')['thickavg'],
-                        meanDf.groupby('side').get_group('rh')['thickstd'],
-                        linestyle='None',
-                        marker='^',
-                        color='b')
-    eb2[-1][0].set_linestyle('--')
+                ax.text((x_starting_point-.5 + startNum-.5)/2, 1.2,
+                        region,
+                        horizontalalignment='center',
+                        alpha=.4,
+                        fontsize=15)
+            else:
+                alpha = 0.2
+                col='green'
+                p = ax.axvspan(x_starting_point-.5, startNum-.5, facecolor=col, alpha=alpha)
+                x_starting_point = startNum
+                startNum = startNum + len(roiDict[region])
+                switch = 0 
 
-    #label = ['LPFC' 'OFC' 'MPFC' 'LTC' 'MTC' 'SMC' 'PC' 'OCC','b']
-    xticksNum = range(8)
+                ax.text((x_starting_point-.5 + startNum-.5)/2, 1.2,
+                        region,
+                        horizontalalignment='center',
+                        alpha=.4,
+                        fontsize=15)
 
-    #rh_g.set_xticklabels(label)
-    rh_g.set_xlabel('Right', fontsize=16)
-    rh_g.set_ylim(1, 5)
-    rh_g.set_xlim(-.5, 32.5)
-    rh_g.set_xticks(range(len(label)))
-    rh_g.set_xticklabels(label)
+        ## annotation
+        mergedDf = pd.merge(meandf,
+                            infodf,
+                            on=['roi','side','region'],
+                            how='inner')
 
+        mergedDf['mean_sub_indv'] = mergedDf.thickavg_x - mergedDf.thickavg_y
+        for row in mergedDf[abs(mergedDf['mean_sub_indv']) > 0.5].iterrows():
+            if row[1].mean_sub_indv < 0:
+                col = 'green'
+            else:
+                col = 'red'
 
-    rh_g.legend()
-    legend = rh_g.legend(frameon = 1)
-    frame = legend.get_frame()
-    frame.set_facecolor('white')
-
-    ######fill
-    startNum = 0
-    switch = 0
-    x_starting_point = 0
-    for region in roiOrder:
-        if switch == 0:
-            switch = 1 
-            pass
-            x_starting_point = startNum
-            startNum = startNum + len(roiDict[region])
-
-            rh_g.text((x_starting_point-.5 + startNum-.5)/2, 1.2,
-                    region,
-                    horizontalalignment='center',
-                    alpha=.4,
-                    fontsize=15)
-        else:
-            alpha = 0.2
-            col='green'
-            p = rh_g.axvspan(x_starting_point-.5, startNum-.5, facecolor=col, alpha=alpha)
-            x_starting_point = startNum
-            startNum = startNum + len(roiDict[region])
-            switch = 0 
-
-            rh_g.text((x_starting_point-.5 + startNum-.5)/2, 1.2,
-                    region,
-                    horizontalalignment='center',
-                    alpha=.4,
-                    fontsize=15)
-
-    ## annotation
-    mergedDf = pd.merge(meanDf.groupby('side').get_group('rh'),
-                        infoDf_side_gb.get_group('rh'),
-                        on=['roi','side','region'],
-                        how='inner')
-
-    mergedDf['mean_sub_indv'] = mergedDf.thickavg_x - mergedDf.thickavg_y
-    for row in mergedDf[abs(mergedDf['mean_sub_indv']) > 0.5].iterrows():
-        rh_g.annotate(row[1].roi,
-                xy=(row[0], row[1].thickavg_y),
-                xytext=(row[0], 1.5-row[1].mean_sub_indv/3),
-                arrowprops=dict(facecolor='green', shrink=0.05),
-                horizontalalignment='left',
-                fontsize=20)
-
-    plt.tight_layout(pad=7, w_pad=3, h_pad=0.2)
+            ax.annotate(row[1].roi,
+                    xy=(row[0], row[1].thickavg_y),
+                    xytext=(row[0], 1.5-row[1].mean_sub_indv/3),
+                    arrowprops=dict(facecolor=col, shrink=0.05),
+                    horizontalalignment=side,
+                    fontsize=20)
 
 
-    labels = rh_g.get_xticklabels()
-    plt.setp(labels, rotation=30)
-    labels = lh_g.get_xticklabels()
-    plt.setp(labels, rotation=30)
+    # # rh_g.plot(infoDf_side_gb.get_group('rh')['thickavg'],'b',label=subjName)
+    # # rh_g.plot(meanDf.groupby('side').get_group('rh')['thickavg'],'b--',label=meanDfName)
+
+    # # #error bar
+    # # eb2 = rh_g.errorbar(range(len(meanDf.roi.unique())),
+                        # # meanDf.groupby('side').get_group('rh')['thickavg'],
+                        # # meanDf.groupby('side').get_group('rh')['thickstd'],
+                        # # linestyle='None',
+                        # # marker='^',
+                        # # color='b')
+    # # eb2[-1][0].set_linestyle('--')
+
+    # # #label = ['LPFC' 'OFC' 'MPFC' 'LTC' 'MTC' 'SMC' 'PC' 'OCC','b']
+    # # xticksNum = range(8)
+
+    # # #rh_g.set_xticklabels(label)
+    # # rh_g.set_xlabel('Right', fontsize=16)
+    # # rh_g.set_ylim(1, 5)
+    # # rh_g.set_xlim(-.5, 32.5)
+    # # rh_g.set_xticks(range(len(label)))
+    # # rh_g.set_xticklabels(label)
+
+
+    # # rh_g.legend()
+    # # legend = rh_g.legend(frameon = 1)
+    # # frame = legend.get_frame()
+    # # frame.set_facecolor('white')
+
+    # ######fill
+    # startNum = 0
+    # switch = 0
+    # x_starting_point = 0
+    # for region in roiOrder:
+        # if switch == 0:
+            # switch = 1 
+            # pass
+            # x_starting_point = startNum
+            # startNum = startNum + len(roiDict[region])
+
+            # rh_g.text((x_starting_point-.5 + startNum-.5)/2, 1.2,
+                    # region,
+                    # horizontalalignment='center',
+                    # alpha=.4,
+                    # fontsize=15)
+        # else:
+            # alpha = 0.2
+            # col='green'
+            # p = rh_g.axvspan(x_starting_point-.5, startNum-.5, facecolor=col, alpha=alpha)
+            # x_starting_point = startNum
+            # startNum = startNum + len(roiDict[region])
+            # switch = 0 
+
+            # rh_g.text((x_starting_point-.5 + startNum-.5)/2, 1.2,
+                    # region,
+                    # horizontalalignment='center',
+                    # alpha=.4,
+                    # fontsize=15)
+
+    # ## annotation
+    # mergedDf = pd.merge(meanDf.groupby('side').get_group('rh'),
+                        # infoDf_side_gb.get_group('rh'),
+                        # on=['roi','side','region'],
+                        # how='inner')
+
+    # mergedDf['mean_sub_indv'] = mergedDf.thickavg_x - mergedDf.thickavg_y
+    # for row in mergedDf[abs(mergedDf['mean_sub_indv']) > 0.5].iterrows():
+        # rh_g.annotate(row[1].roi,
+                # xy=(row[0], row[1].thickavg_y),
+                # xytext=(row[0], 1.5-row[1].mean_sub_indv/3),
+                # arrowprops=dict(facecolor='green', shrink=0.05),
+                # horizontalalignment='left',
+                # fontsize=20)
+
+    # plt.tight_layout(pad=7, w_pad=3, h_pad=0.2)
+
+
+    # labels = rh_g.get_xticklabels()
+    # plt.setp(labels, rotation=30)
+    # labels = lh_g.get_xticklabels()
+    # plt.setp(labels, rotation=30)
+    fig.show()
     fig.savefig(join(fsDir, basename(subjName)+'_thickness'))
+    print(join(fsDir, basename(subjName)+'_thickness'))
 
 
 # def main(subject_loc, background_subject_locs, graph, meanDfLoc,verbose, brain):
@@ -311,96 +324,96 @@ def draw_thickness_detailed(fsDir, infoDf, meanDf, subjName, meanDfName):
 
 
 
-def draw_thickness(infoDf,meanDf, subjName, meanDfName, subject_loc):
-    infoDf['roi'] = infoDf.subroi.str[3:]
-    meanDf['roi'] = meanDf.subroi.str[3:]
+# def draw_thickness(infoDf,meanDf, subjName, meanDfName, subject_loc):
+    # infoDf['roi'] = infoDf.subroi.str[3:]
+    # meanDf['roi'] = meanDf.subroi.str[3:]
 
-    gb = infoDf.groupby('roi')
-    infoDf = pd.concat([gb.get_group('LPFC'),
-                        gb.get_group('OFC'),
-                        gb.get_group('MPFC'),
-                        gb.get_group('LTC'),
-                        gb.get_group('MTC'),
-                        gb.get_group('SMC'),
-                        gb.get_group('PC'),
-                        gb.get_group('OCC')])
-
-
-    gbmean = meanDf.groupby('roi')
-    meanDf = pd.concat([gbmean.get_group('LPFC'),
-                        gbmean.get_group('OFC'),
-                        gbmean.get_group('MPFC'),
-                        gbmean.get_group('LTC'),
-                        gbmean.get_group('MTC'),
-                        gbmean.get_group('SMC'),
-                        gbmean.get_group('PC'),
-                        gbmean.get_group('OCC')])
-    print meanDf
-    gb = infoDf.groupby('side')
-    label = infoDf.subroi.str[3:].unique()
-
-    fig = plt.figure(figsize=(12,8))
-    fig.suptitle("Cortical thickness in eight regions", fontsize=20)
-
-    lh_g = plt.subplot2grid((2,2),(0, 0), rowspan=2)
-    rh_g = plt.subplot2grid((2,2),(0, 1), rowspan=2)
-    lh_g.plot(gb.get_group('lh')['thickavg'],'r',label=subjName)
-
-    lh_g.plot(meanDf.groupby('side').get_group('lh')['thickavg'],'r--',label=meanDfName)
-
-    # error bar
-
-    eb1 = lh_g.errorbar(range(len(meanDf.roi.unique())),
-                        meanDf.groupby('side').get_group('lh')['thickavg'],
-                        meanDf.groupby('side').get_group('lh')['std'],
-                        linestyle='None',
-                        marker='^')
-    eb1[-1][0].set_linestyle('--')
-
-    lh_g.set_xlabel('Left', fontsize=16)
-    lh_g.set_ylabel('Cortical thickness in mm', fontsize=16)
-    lh_g.set_ylim(1.0, 4)
-
-    lh_g.set_xticks(range(8))
-    lh_g.set_xticklabels(label)
-    lh_g.set_xlim(-.5, 7.5)
-    lh_g.legend()
-    legend = lh_g.legend(frameon = 1)
-    frame = legend.get_frame()
-    frame.set_facecolor('white')
+    # gb = infoDf.groupby('roi')
+    # infoDf = pd.concat([gb.get_group('LPFC'),
+                        # gb.get_group('OFC'),
+                        # gb.get_group('MPFC'),
+                        # gb.get_group('LTC'),
+                        # gb.get_group('MTC'),
+                        # gb.get_group('SMC'),
+                        # gb.get_group('PC'),
+                        # gb.get_group('OCC')])
 
 
+    # gbmean = meanDf.groupby('roi')
+    # meanDf = pd.concat([gbmean.get_group('LPFC'),
+                        # gbmean.get_group('OFC'),
+                        # gbmean.get_group('MPFC'),
+                        # gbmean.get_group('LTC'),
+                        # gbmean.get_group('MTC'),
+                        # gbmean.get_group('SMC'),
+                        # gbmean.get_group('PC'),
+                        # gbmean.get_group('OCC')])
+    # print meanDf
+    # gb = infoDf.groupby('side')
+    # label = infoDf.subroi.str[3:].unique()
+
+    # fig = plt.figure(figsize=(12,8))
+    # fig.suptitle("Cortical thickness in eight regions", fontsize=20)
+
+    # lh_g = plt.subplot2grid((2,2),(0, 0), rowspan=2)
+    # rh_g = plt.subplot2grid((2,2),(0, 1), rowspan=2)
+    # lh_g.plot(gb.get_group('lh')['thickavg'],'r',label=subjName)
+
+    # lh_g.plot(meanDf.groupby('side').get_group('lh')['thickavg'],'r--',label=meanDfName)
+
+    # # error bar
+
+    # eb1 = lh_g.errorbar(range(len(meanDf.roi.unique())),
+                        # meanDf.groupby('side').get_group('lh')['thickavg'],
+                        # meanDf.groupby('side').get_group('lh')['std'],
+                        # linestyle='None',
+                        # marker='^')
+    # eb1[-1][0].set_linestyle('--')
+
+    # lh_g.set_xlabel('Left', fontsize=16)
+    # lh_g.set_ylabel('Cortical thickness in mm', fontsize=16)
+    # lh_g.set_ylim(1.0, 4)
+
+    # lh_g.set_xticks(range(8))
+    # lh_g.set_xticklabels(label)
+    # lh_g.set_xlim(-.5, 7.5)
+    # lh_g.legend()
+    # legend = lh_g.legend(frameon = 1)
+    # frame = legend.get_frame()
+    # frame.set_facecolor('white')
 
 
-    rh_g.plot(gb.get_group('rh')['thickavg'],'b',label=subjName)
-    rh_g.plot(meanDf.groupby('side').get_group('rh')['thickavg'],'b--',label=meanDfName)
-
-    # error bar
-    eb2 = rh_g.errorbar(range(len(meanDf.roi.unique())),
-                        meanDf.groupby('side').get_group('rh')['thickavg'],
-                        meanDf.groupby('side').get_group('rh')['std'],
-                        linestyle='None',
-                        marker='^',
-                        color='b')
-    eb2[-1][0].set_linestyle('--')
-
-    #label = ['LPFC' 'OFC' 'MPFC' 'LTC' 'MTC' 'SMC' 'PC' 'OCC','b']
-    xticksNum = range(8)
-
-    #rh_g.set_xticklabels(label)
-    rh_g.set_xlabel('Right', fontsize=16)
-    rh_g.set_ylim(1, 4)
-    rh_g.set_xlim(-.5, 7.5)
-    rh_g.set_xticks(range(8))
-    rh_g.set_xticklabels(label)
 
 
-    rh_g.legend()
-    legend = rh_g.legend(frameon = 1)
-    frame = legend.get_frame()
-    frame.set_facecolor('white')
+    # rh_g.plot(gb.get_group('rh')['thickavg'],'b',label=subjName)
+    # rh_g.plot(meanDf.groupby('side').get_group('rh')['thickavg'],'b--',label=meanDfName)
 
-    plt.savefig('/ccnc/mri_team/'+subject_loc)
+    # # error bar
+    # eb2 = rh_g.errorbar(range(len(meanDf.roi.unique())),
+                        # meanDf.groupby('side').get_group('rh')['thickavg'],
+                        # meanDf.groupby('side').get_group('rh')['std'],
+                        # linestyle='None',
+                        # marker='^',
+                        # color='b')
+    # eb2[-1][0].set_linestyle('--')
+
+    # #label = ['LPFC' 'OFC' 'MPFC' 'LTC' 'MTC' 'SMC' 'PC' 'OCC','b']
+    # xticksNum = range(8)
+
+    # #rh_g.set_xticklabels(label)
+    # rh_g.set_xlabel('Right', fontsize=16)
+    # rh_g.set_ylim(1, 4)
+    # rh_g.set_xlim(-.5, 7.5)
+    # rh_g.set_xticks(range(8))
+    # rh_g.set_xticklabels(label)
+
+
+    # rh_g.legend()
+    # legend = rh_g.legend(frameon = 1)
+    # frame = legend.get_frame()
+    # frame.set_facecolor('white')
+
+    # plt.savefig('/ccnc/mri_team/'+subject_loc)
 
 
 def dictWithTuple2df(infoDict):
