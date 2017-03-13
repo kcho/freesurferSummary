@@ -69,36 +69,35 @@ def draw_thickness_detailed(fsDir, infoDf, meanDf, subjName, meanDfName):
     meanDf  = reorder_df(meanDf, 'region', roiOrder)
 
     infoDf_side_gb = infoDf.groupby('side')
+    meanDf_side_gb = meanDf.groupby('side')
     label = infoDf.subroi.str[3:].unique()
 
     fig, (lh_g, rh_g) = plt.subplots(nrows=2, figsize=(22,12))
     fig.suptitle("Cortical thickness in all regions", fontsize=20)
 
-    # lh_g = plt.subplot2grid((2,2),(0, 0), colspan=2)
-    # rh_g = plt.subplot2grid((2,2),(1, 0), colspan=2)
 
-    lh_g.plot(infoDf.groupby('side').get_group('lh').index,
-             infoDf.groupby('side').get_group('lh').thickavg,
-            label=subjName)
-    # lh_g.plot(infoDf.groupby('side').get_group('lh')['thickavg'],'r',label=subjName)
-    # lh_g.plot(meanDf.groupby('side').get_group('lh')['thickavg'],'r--',label=meanDfName)
+    lh_g.plot(infoDf_side_gb.get_group('lh').thickavg, 
+              'r',
+              label=subjName)
+
+    lh_g.plot(meanDf_side_gb.get_group('lh').thickavg, 
+              'r--',
+              label=subjName)
 
     # error bar
-
-    # eb1 = lh_g.errorbar(range(len(meanDf.roi.unique())),
-                        # meanDf.groupby('side').get_group('lh')['thickavg'],
-                        # meanDf.groupby('side').get_group('lh')['thickstd'],
-                        # linestyle='None',
-                        # marker='^')
-    # eb1[-1][0].set_linestyle('--')
-
-    lh_g.set_xlabel('Left', fontsize=16)
+    eb1 = lh_g.errorbar(range(len(meanDf_side_gb.get_group('lh').roi.unique())),
+                        meanDf_side_gb.get_group('lh')['thickavg'],
+                        meanDf_side_gb.get_group('lh')['thickstd'],
+                        linestyle='None',
+                        marker='^')
+    eb1[-1][0].set_linestyle('--')
 
     lh_g.set_ylim(1.0, 5)
-
+    lh_g.set_xlabel('Left', fontsize=16)
     lh_g.set_xticks(range(len(label)))
     lh_g.set_xticklabels(['' for x in label])
     lh_g.set_xlim(-.5, 32.5)
+
     lh_g.legend()
     legend = lh_g.legend(frameon = 1)
     frame = legend.get_frame()
