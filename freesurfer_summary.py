@@ -87,14 +87,16 @@ def draw_thickness_detailed(fsDir, infoDf, meanDf, subjName, meanDfName):
         ax = axes[gnum]
 
         ax.plot(infodf.thickavg, 'r', label=subjName)
-        ax.plot(meandf.thickavg, 'r--', label=subjName)
+        ax.plot(meandf.thickavg, 'r--', label='CCNC HCs')
 
         # error bar
         eb1 = ax.errorbar(range(len(label)),
                             meandf.thickavg,
                             meandf.thickstd,
                             linestyle='None',
-                            marker='^')
+                            marker='^',
+                         label='_nolegend_')
+
         eb1[-1][0].set_linestyle('--')
 
         ax.set_ylim(1.0, 5)
@@ -109,7 +111,7 @@ def draw_thickness_detailed(fsDir, infoDf, meanDf, subjName, meanDfName):
         frame.set_facecolor('white')
 
 
-    #####fill
+        #fill
         roiDict = get_cortical_rois()
         startNum = 0
         switch = 0
@@ -160,87 +162,10 @@ def draw_thickness_detailed(fsDir, infoDf, meanDf, subjName, meanDfName):
                     horizontalalignment=side,
                     fontsize=20)
 
-
-    # # rh_g.plot(infoDf_side_gb.get_group('rh')['thickavg'],'b',label=subjName)
-    # # rh_g.plot(meanDf.groupby('side').get_group('rh')['thickavg'],'b--',label=meanDfName)
-
-    # # #error bar
-    # # eb2 = rh_g.errorbar(range(len(meanDf.roi.unique())),
-                        # # meanDf.groupby('side').get_group('rh')['thickavg'],
-                        # # meanDf.groupby('side').get_group('rh')['thickstd'],
-                        # # linestyle='None',
-                        # # marker='^',
-                        # # color='b')
-    # # eb2[-1][0].set_linestyle('--')
-
-    # # #label = ['LPFC' 'OFC' 'MPFC' 'LTC' 'MTC' 'SMC' 'PC' 'OCC','b']
-    # # xticksNum = range(8)
-
-    # # #rh_g.set_xticklabels(label)
-    # # rh_g.set_xlabel('Right', fontsize=16)
-    # # rh_g.set_ylim(1, 5)
-    # # rh_g.set_xlim(-.5, 32.5)
-    # # rh_g.set_xticks(range(len(label)))
-    # # rh_g.set_xticklabels(label)
-
-
-    # # rh_g.legend()
-    # # legend = rh_g.legend(frameon = 1)
-    # # frame = legend.get_frame()
-    # # frame.set_facecolor('white')
-
-    # ######fill
-    # startNum = 0
-    # switch = 0
-    # x_starting_point = 0
-    # for region in roiOrder:
-        # if switch == 0:
-            # switch = 1 
-            # pass
-            # x_starting_point = startNum
-            # startNum = startNum + len(roiDict[region])
-
-            # rh_g.text((x_starting_point-.5 + startNum-.5)/2, 1.2,
-                    # region,
-                    # horizontalalignment='center',
-                    # alpha=.4,
-                    # fontsize=15)
-        # else:
-            # alpha = 0.2
-            # col='green'
-            # p = rh_g.axvspan(x_starting_point-.5, startNum-.5, facecolor=col, alpha=alpha)
-            # x_starting_point = startNum
-            # startNum = startNum + len(roiDict[region])
-            # switch = 0 
-
-            # rh_g.text((x_starting_point-.5 + startNum-.5)/2, 1.2,
-                    # region,
-                    # horizontalalignment='center',
-                    # alpha=.4,
-                    # fontsize=15)
-
-    # ## annotation
-    # mergedDf = pd.merge(meanDf.groupby('side').get_group('rh'),
-                        # infoDf_side_gb.get_group('rh'),
-                        # on=['roi','side','region'],
-                        # how='inner')
-
-    # mergedDf['mean_sub_indv'] = mergedDf.thickavg_x - mergedDf.thickavg_y
-    # for row in mergedDf[abs(mergedDf['mean_sub_indv']) > 0.5].iterrows():
-        # rh_g.annotate(row[1].roi,
-                # xy=(row[0], row[1].thickavg_y),
-                # xytext=(row[0], 1.5-row[1].mean_sub_indv/3),
-                # arrowprops=dict(facecolor='green', shrink=0.05),
-                # horizontalalignment='left',
-                # fontsize=20)
-
-    # plt.tight_layout(pad=7, w_pad=3, h_pad=0.2)
-
-
-    # labels = rh_g.get_xticklabels()
-    # plt.setp(labels, rotation=30)
-    # labels = lh_g.get_xticklabels()
-    # plt.setp(labels, rotation=30)
+    ax.set_xticklabels(label)
+    labels = ax.get_xticklabels()
+    plt.setp(labels, rotation=30)
+    plt.tight_layout(pad=7, w_pad=3, h_pad=0.2)
     fig.show()
     fig.savefig(join(fsDir, basename(subjName)+'_thickness'))
     print(join(fsDir, basename(subjName)+'_thickness'))
