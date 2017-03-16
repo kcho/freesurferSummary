@@ -31,9 +31,9 @@ def freesurferSummary(args):
                             subjectInitials,
                             'CCNC_mean')
 
-    tksurferCapture.main(main_fsDir, 
-                   join(main_fsDir,
-                    'tmp/thick_kev_detailed.csv'))
+    # tksurferCapture.main(args.fsDir, join(args.fsDir,
+                                          # 'tmp',
+                                          # 'thick_kev_detailed_new.csv'))
 
 
 def getRegion(roi):
