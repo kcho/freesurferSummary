@@ -1,4 +1,4 @@
-#!/ccnc_bin/mini_env/bin/python
+#!/ccnc/anaconda2/bin/python
 from __future__ import division
 
 __author__ = 'kcho'
