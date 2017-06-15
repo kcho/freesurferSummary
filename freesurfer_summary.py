@@ -79,12 +79,15 @@ def draw_thickness_detailed(fsDir, infoDf, meanDf, subjName, meanDfName):
 
     for gnum, side in enumerate(['lh', 'rh']):
         infodf = infoDf_gb.get_group(side)
+        print infodf
         meandf = meanDf_gb.get_group(side)
 
         # Reorder Dfs
         infodf = infodf.sort_values(['roi','side'])
         meandf = meandf.sort_values(['roi','side'])
+        print infodf
         infodf = reorder_df(infodf, 'region', roiOrder)
+        print infodf
         meandf  = reorder_df(meandf, 'region', roiOrder)
 
         ax = axes[gnum]
@@ -165,7 +168,7 @@ def draw_thickness_detailed(fsDir, infoDf, meanDf, subjName, meanDfName):
                     horizontalalignment=side,
                     fontsize=20)
 
-    ax.set_xticklabels(label)
+    ax.set_xticklabels(infodf.roi)
     labels = ax.get_xticklabels()
     plt.setp(labels, rotation=30)
     plt.tight_layout(pad=7, w_pad=3, h_pad=0.2)
