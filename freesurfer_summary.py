@@ -1,7 +1,5 @@
 #!/ccnc/anaconda2/bin/python
 from __future__ import division
-
-__author__ = 'kcho'
 import os
 import re
 from os.path import join, basename, dirname
@@ -12,11 +10,15 @@ import argparse
 import textwrap
 from progressbar import ProgressBar
 import time
-import tksurferCapture
+#import tksurferCapture
 
+__author__ = 'kcho'
 plt.style.use('ggplot')
 
 def freesurferSummary(args):
+
+    # Collect statistics using freesurfer functions
+    # mri_annotation2label, mri_mergelabels, mris_anatomical_stats
     infoDf = collectStats(args.fsDir)
 
     meanDfLoc = '/ccnc_bin/meanThickness/detailed_mean_2015_12_28.csv'
@@ -167,9 +169,9 @@ def draw_thickness_detailed(fsDir, infoDf, meanDf, subjName, meanDfName):
     labels = ax.get_xticklabels()
     plt.setp(labels, rotation=30)
     plt.tight_layout(pad=7, w_pad=3, h_pad=0.2)
-    fig.show()
-    fig.savefig(join(fsDir, basename(subjName)+'_thickness'))
-    print(join(fsDir, basename(subjName)+'_thickness'))
+    #fig.show()
+    fig.savefig(join(fsDir, basename(subjName)+'_thickness.png'))
+    print(join(fsDir, basename(subjName)+'_thickness.png'))
 
 
 # def main(subject_loc, background_subject_locs, graph, meanDfLoc,verbose, brain):
@@ -384,12 +386,12 @@ def getInfoFromLabel(fsDir,roiDict):
                     cortex=cortex,
                     name=basename(fsDir)
                 )
-            print command
             output=os.popen(re.sub('\s+',' ',command)).read()
             pbar.update((num/totalNum) * 100)
             num+=1
 
-            print 'output', output
+            print output
+
             thickness = re.search('thickness\s+=\s+(\S+)\s+mm\s+\S+\s+(\S+)', output).group(1,2)
             numvert = re.search('number of vertices\s+=\s+(\S+)', output).group(1)
             surfarea = re.search('total surface area\s+=\s+(\S+)', output).group(1)
@@ -410,12 +412,13 @@ def getInfoFromLabel(fsDir,roiDict):
 def mergeLabel(fsDir, roiDict):
     '''
     Merge labels into one label
+    merge the labels in the roiDict.values --> label  roiDict.keys
     '''
 
     for side in ['lh','rh']:
         for cortex, rois in roiDict.iteritems():
             inLabelLocs = [join(fsDir,'tmp',side+'.'+x+'.label') for x in rois]
-            inLabelForms = ' '.join(['-i '+x for x in inLabel])
+            inLabelForms = ' '.join(['-i '+x for x in inLabelLocs])
             outLabel = join(fsDir,'tmp',side+'_'+cortex)
 
             command = 'mri_mergelabels \
@@ -435,17 +438,11 @@ def makeLabel(fsDir):
     fsDirName = basename(fsDir)
     labelOutDir = join(fsDir, 'tmp')
 
+    # below must be defined here, in order for the FS to run
+    os.environ["FREESURFER_HOME"] = '/usr/local/freesurfer'
+    os.environ["SUBJECTS_DIR"] = dirname(fsDir)
+
     for side in ['lh','rh']:
-        command = 'mri_annotation2label \
-            --subject {basename} \
-            --hemi {side} \
-            --outdir {outDir} \
-                2>/dev/null'.format(basename=fsDirName, 
-                                    side=side, 
-                                    outDir=labelOutDir)
-
-        os.popen(re.sub('\s+',' ',command)).read()
-
         command = 'mri_annotation2label \
             --subject {basename} \
             --hemi {side} \
@@ -455,6 +452,7 @@ def makeLabel(fsDir):
                                     side=side, 
                                     outDir=labelOutDir)
 
+        print re.sub('\s+',' ',command)
         os.popen(re.sub('\s+',' ',command)).read()
 
 def collectStats(fsDir):
@@ -470,10 +468,6 @@ def collectStats(fsDir):
     5. save df to fsDir/tmp/thick_kev_detailed.csv
     Than mean df is returned.
     '''
-
-    ## FREESURFER settings
-    #os.environ["FREESURFER_HOME"] = '/usr/local/freesurfer'
-    #os.environ["SUBJECTS_DIR"] = dirname(fsDir)
 
     # cortical regions as a dictionary
     roiDict = get_cortical_rois_detailed()
