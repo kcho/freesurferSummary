@@ -1,10 +1,13 @@
 import shutil
 import os
+from os.path import join, isfile
 import re
 from nilearn import datasets
 from nilearn import plotting
 import nipype.interfaces.freesurfer as fs          # fsl
 import pandas as pd
+import argparse
+import textwarp
 import sys
 pd.set_option('max_rows', 5000)
 
@@ -153,12 +156,9 @@ def mergeLabel(freesurfer_dir, labelNames):
 
 
 def cleanMean(meanCSV, indCSV):
+    # read mean CSV
     meanDf = pd.read_csv(meanCSV, index_col=0)
-    meanDf['roi'] = meanDf.subroi.str[3:]
-    meanDf['side'] = meanDf.subroi.str[:2]
     meanDf = meanDf.groupby(['roi','side']).mean().reset_index()
-
-
 
     df = pd.read_csv(indCSV, index_col=0)
     df['roi'] = df.subroi.str[3:]
@@ -213,9 +213,14 @@ def makeAsc(freesurferLoc):
 
 
 
+def main(fsDir,csv):
+    '''
+    Make brain slice captures using tksurfer
+    '''
 
-def main(freesurferLoc,indcsv):
-    mergedDf = cleanMean('/ccnc_bin/meanThickness/detailed_mean_2015_12_28.csv', indcsv)
+    mean_csv_loc = '/ccnc_bin/meanThickness/detailed_mean_2017_06_16.csv'
+    mergedDf = cleanMean(mean_csv_loc, csv)
+
     #standard_ctab = '/ccnc_bin/meanThickness/standard_ctab.txt'
     standard_ctab = '/usr/local/freesurfer/FreeSurferColorLUT.txt'
     subject_ctab = os.path.join(freesurferLoc,'ctab.txt')
@@ -272,8 +277,40 @@ def main(freesurferLoc,indcsv):
 
 
 
-if __name__=='__main__':
-    main(sys.argv[1], sys.argv[2])
+#if __name__=='__main__':
+    #main(sys.argv[1], sys.argv[2])
 
-    #main('/Volumes/promise/CCNC_MRI_3T/NOR/NOR103_SHS/baseline/FREESURFER',
-            #'/Volumes/promise/CCNC_MRI_3T/NOR/NOR103_SHS/baseline/FREESURFER/tmp/thick_kev_detailed.csv')
+    ##main('/Volumes/promise/CCNC_MRI_3T/NOR/NOR103_SHS/baseline/FREESURFER',
+            ##'/Volumes/promise/CCNC_MRI_3T/NOR/NOR103_SHS/baseline/FREESURFER/tmp/thick_kev_detailed.csv')
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        description=textwrap.dedent('''\
+            {codeName} : 
+            ========================================
+            eg) {codeName} --fsDir {inputLoc} 
+                {codeName} --fsDir {inputLoc} --csv ~/thick_kev_detailed.csv
+            '''.format(codeName=basename(__file__),
+                       inputLoc = 'subjectLoc')))
+
+    parser.add_argument(
+        '-f', '--fsDir',
+        help='Freesurfer directory location',
+        default=os.getcwd())
+
+    parser.add_argument(
+        '-c', '--csv',
+        help='Output csv file from freesurfer_summary.py',
+        default=join(os.getcwd(), 'tmp/thick_kev_detailed.csv'))
+
+    args = parser.parse_args()
+    os.environ["FREESURFER_HOME"] = '/usr/local/freesurfer'
+    os.environ["SUBJECTS_DIR"] = dirname(dirname(args.fsDir))
+
+    if isfile(args.csv):
+        main(args.fsDir, args.csv)
+    else:
+        sys.exit('CSV is missing - Please learn freesurfer_summary.py')
+
