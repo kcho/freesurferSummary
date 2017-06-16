@@ -114,6 +114,7 @@ def makeBrainPic(freesurfer_dir):
                     subjid=os.path.basename(freesurfer_dir),
                     side=side,
                     tcl=tcl_script)
+        print command
 
         os.environ["FREESURFER_HOME"] = '/usr/local/freesurfer'
         os.environ["SUBJECTS_DIR"] = os.path.dirname(freesurfer_dir)
