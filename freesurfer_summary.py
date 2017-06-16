@@ -16,11 +16,20 @@ __author__ = 'kcho'
 plt.style.use('ggplot')
 
 def freesurferSummary(args):
+    '''
+    Output freesurfer summary
+    '''
 
     # Collect statistics using freesurfer functions
     # mri_annotation2label, mri_mergelabels, mris_anatomical_stats
+    # infoDf eg
+    #    ,subroi,numvert,surfarea,grayvol,thickavg,thickstd,meancurv,gauscurv,foldind,curvind,side
+    #   0,lh_bankssts,1803.0,1207.0,2743.0,2.301,0.439,0.107,0.019,13.0,1.5,lh
     infoDf = collectStats(args.fsDir)
 
+    # meanDf eg
+    #    ,subroi,thickavg,side,thickstd,subject
+    #   0,lh_bankssts,2.577,lh,0.439,NOR01_XXX
     meanDfLoc = '/ccnc_bin/meanThickness/detailed_mean_2015_12_28.csv'
     meanDf = pd.read_csv(meanDfLoc, index_col=0)
 
@@ -85,9 +94,7 @@ def draw_thickness_detailed(fsDir, infoDf, meanDf, subjName, meanDfName):
         # Reorder Dfs
         infodf = infodf.sort_values(['roi','side'])
         meandf = meandf.sort_values(['roi','side'])
-        print infodf
         infodf = reorder_df(infodf, 'region', roiOrder)
-        print infodf
         meandf  = reorder_df(meandf, 'region', roiOrder)
 
         ax = axes[gnum]
