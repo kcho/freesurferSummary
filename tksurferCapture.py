@@ -1,13 +1,14 @@
+#!/ccnc/anaconda2/bin/python
 import shutil
 import os
-from os.path import join, isfile
+from os.path import join, isfile, basename, dirname
 import re
 from nilearn import datasets
 from nilearn import plotting
 import nipype.interfaces.freesurfer as fs          # fsl
 import pandas as pd
 import argparse
-import textwarp
+import textwrap
 import sys
 pd.set_option('max_rows', 5000)
 
@@ -164,9 +165,6 @@ def cleanMean(meanCSV, indCSV):
     df['roi'] = df.subroi.str[3:]
     df['side'] = df.subroi.str[:2]
 
-
-
-
     mergedDf = pd.merge(meanDf,
                         df,
                         on=['roi','side'],
@@ -190,6 +188,9 @@ def cleanMean(meanCSV, indCSV):
     #return output
 
 def makeAsc(freesurferLoc):
+    '''
+    Converts thickness and white matter surface map to a ascii file
+    '''
     for side in ['lh','rh']:
         thickSurf = os.path.join(freesurferLoc,
                 'surf',side+'.thickness')
@@ -211,30 +212,33 @@ def makeAsc(freesurferLoc):
 
         out = os.popen(command).read()
 
-
-
 def main(fsDir,csv):
     '''
     Make brain slice captures using tksurfer
     '''
 
     mean_csv_loc = '/ccnc_bin/meanThickness/detailed_mean_2017_06_16.csv'
+
+    # returns mean df + individual df
     mergedDf = cleanMean(mean_csv_loc, csv)
 
     #standard_ctab = '/ccnc_bin/meanThickness/standard_ctab.txt'
     standard_ctab = '/usr/local/freesurfer/FreeSurferColorLUT.txt'
-    subject_ctab = os.path.join(freesurferLoc,'ctab.txt')
+    subject_ctab = join(fsDir,'ctab.txt')
     shutil.copyfile(standard_ctab, subject_ctab)
 
-    makeAsc(freesurferLoc)
+    # converts surface files into ascii files
+    makeAsc(fsDir)
 
     # for each side
     for side in ['lh','rh']:
         mergedDfSide = mergedDf.groupby('side').get_group(side)
 
         # load thickness ascii file
-        asciiFile = os.path.join(freesurferLoc, 'tmp', side+'.thickness.asc')
-        asciiFileNew = os.path.join(freesurferLoc, 'tmp', 'new.'+side+'.thickness.asc')
+        asciiFile = join('{0}/tmp/{1}.thickness.asc'.format(fsDir, side))
+        asciiFileNew = re.sub('{0}.thickness'.format(side),
+                              'new.{0}.thickness'.format(side),
+                             asciiFile)
 
         asciiDf = pd.read_csv(asciiFile, sep='\s+')
         asciiDf.columns = ['vertexNum', 'x','y','z','value']
@@ -242,12 +246,10 @@ def main(fsDir,csv):
         asciiDf['value'] = 0
 
         # for each labels
-        #print mergedDf
         for row in mergedDfSide.iterrows():
             # get locations
             roiName = row[1].side + '.' + row[1].roi + '.label'
-            roiLoc = os.path.join(freesurferLoc,
-                    'tmp',roiName)
+            roiLoc = join(fsDir, 'tmp',roiName)
 
             # get newNumber
             newNum = row[1].mean_sub_indv
@@ -268,12 +270,11 @@ def main(fsDir,csv):
             #labelValueSwap(roiLoc, row[1].mean_sub_indv)
         #asciiDf.index = asciiDf.index.apply(lambda x: x.zfill(15))
         asciiDf.to_csv(asciiFileNew,sep=' ', header=False)
-        tclWrite(os.path.join(freesurferLoc,'tmp','{side}_tksurfer.tcl'.format(side=side)),
+        tclWrite(join('{0}/tmp/{1}_tksurfer.tcl'.format(fsDir,side)),
                 asciiFileNew)
 
-
-    #mergeLabel(freesurferLoc, mergedDf.roi.unique())
-    makeBrainPic(freesurferLoc)
+    #mergeLabel(fsDir, mergedDf.roi.unique())
+    makeBrainPic(fsDir)
 
 
 
@@ -303,7 +304,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '-c', '--csv',
         help='Output csv file from freesurfer_summary.py',
-        default=join(os.getcwd(), 'tmp/thick_kev_detailed.csv'))
+        default=join(os.getcwd(), 'tmp/thick_kev_detailed_new.csv'))
 
     args = parser.parse_args()
     os.environ["FREESURFER_HOME"] = '/usr/local/freesurfer'
@@ -312,5 +313,6 @@ if __name__ == '__main__':
     if isfile(args.csv):
         main(args.fsDir, args.csv)
     else:
+        print(args.csv)
         sys.exit('CSV is missing - Please learn freesurfer_summary.py')
 
