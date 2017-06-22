@@ -4,9 +4,11 @@ import os
 import re
 from os.path import join, basename, dirname
 import sys
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import argparse
+import itertools
 import textwrap
 from progressbar import ProgressBar
 import time
@@ -79,22 +81,22 @@ def draw_thickness(fsDir, infoDf, meanDf, subjName, meanDfName):
         if 'roi' not in df_tmp.columns:
             df_tmp['roi'] = df_tmp.subroi.str[3:]
             print("The subject {subjName}'s csv requires editing, to have 'roi' column".
-                  format(subjName=subjName)
+                  format(subjName=subjName))
         if 'region' not in df_tmp.columns:
             df_tmp['region'] = df_tmp.roi.apply(getRegion)
             print("The subject {subjName}'s csv requires editing, to have 'region' column".
-                  format(subjName=subjName)
+                  format(subjName=subjName))
 
     # meanDf to have averaged values for all groups
-    meanDf = meanDf.groupby(['roi','side']).mean().reset_index()
-    meanDf.columns = ['roi','side','thickavg','thickstd','region']
+    meanDf = meanDf.groupby(['roi','side','region']).mean().reset_index()
+    meanDf.columns = ['roi','side','region', 'thickavg','thickstd']
 
     # side group by
     infoDf_gb = infoDf.groupby('side')
     meanDf_gb = meanDf.groupby('side')
 
 
-    fig, axes = plt.subplots(nrows=2, figsize=(22,12))
+    fig, axes = plt.subplots(nrows=2, figsize=(22,12), facecolor='white')
     fig.suptitle("Cortical thickness in all regions", fontsize=20)
 
     for snum, side in enumerate(['lh', 'rh']):
@@ -111,16 +113,17 @@ def draw_thickness(fsDir, infoDf, meanDf, subjName, meanDfName):
         ax = axes[snum]
 
         ax.plot(infodf.thickavg, 'r', label=subjName)
-        ax.plot(meandf.thickavg, 'r--', label='CCNC HCs')
+        ax.plot(meandf.thickavg, 'b--', label='CCNC HCs')
 
         # errorbar(x, y, std)
         roiList = infodf.roi.unique()
         eb1 = ax.errorbar(range(len(roiList)),
                           meandf.thickavg,
                           meandf.thickstd,
-                          linestyle='None',
                           marker='^',
-                          label='_nolegend_')
+                          label='_nolegend_', 
+                          color='b',
+                          ecolor='b')
         eb1[-1][0].set_linestyle('--')
 
         # Graph settings
@@ -138,6 +141,24 @@ def draw_thickness(fsDir, infoDf, meanDf, subjName, meanDfName):
 
         # Background fill (group discrimination)
         roiDict = get_cortical_rois()
+        roiOrder_full = [[x]*len(roiDict[x]) for x in roiOrder]
+        roiOrder_one_list = list(itertools.chain.from_iterable(roiOrder_full))
+        roiOrder_array = np.array(roiOrder_one_list)
+
+        regionToHighlight = roiOrder[0::2]
+        regionToNotHighlight = roiOrder[0::2]
+        xCoords = [np.where(roiOrder_array==x)[0] for x in regionToHighlight]
+        for x in xCoords:
+            col='green'
+            ax.axvspan(x[0], x[-1], alpha=0.5)
+
+        #boundArr = np.array([])
+
+        #for regionNum, region in enumerate(roiOrder):
+            #boundArr = np.append(boundArr, np.tile(regionNum, len(roiDict[region])))
+
+        #print boundArr
+
         startNum = 0
         switch = 0
         x_starting_point = 0
@@ -145,6 +166,9 @@ def draw_thickness(fsDir, infoDf, meanDf, subjName, meanDfName):
             if switch == 0:
                 switch = 1 
                 pass
+                alpha = 1
+                col='white'
+                #p = ax.axvspan(x_starting_point-.5, startNum-.5, facecolor=col, alpha=alpha)
                 x_starting_point = startNum
                 startNum = startNum + len(roiDict[region])
 
@@ -155,8 +179,8 @@ def draw_thickness(fsDir, infoDf, meanDf, subjName, meanDfName):
                         fontsize=15)
             else:
                 alpha = 0.2
-                col='green'
-                p = ax.axvspan(x_starting_point-.5, startNum-.5, facecolor=col, alpha=alpha)
+                col='yellow'
+                #p = ax.axvspan(x_starting_point-.5, startNum-.5, facecolor=col, alpha=alpha)
                 x_starting_point = startNum
                 startNum = startNum + len(roiDict[region])
                 switch = 0 
@@ -204,7 +228,7 @@ def dictWithTuple2df(infoDict):
                   'thickavg', 'thickstd',
                   'meancurv', 'gauscurv', 'foldind', 'curvind']
     df['side'] = df['subroi'].str[:2]
-    df['roi'] = = df.subroi.str[3:]
+    df['roi'] = df.subroi.str[3:]
     df['region'] = df.roi.apply(getRegion)
 
     return df
