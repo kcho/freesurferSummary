@@ -21,26 +21,32 @@ def freesurferSummary(args):
     '''
 
     # Collect statistics using freesurfer functions
-    # mri_annotation2label, mri_mergelabels, mris_anatomical_stats
-    # infoDf eg
-    #    ,subroi,numvert,surfarea,grayvol,thickavg,thickstd,meancurv,gauscurv,foldind,curvind,side
-    #   0,lh_bankssts,1803.0,1207.0,2743.0,2.301,0.439,0.107,0.019,13.0,1.5,lh
+    #     mri_annotation2label
+    #     mri_mergelabels
+    #     mris_anatomical_stats --> takes time
+    # Returns infoDf
+    #     ,subroi,numvert,surfarea,grayvol,thickavg,thickstd,meancurv,gauscurv,foldind,curvind,side
+    #     0,lh_bankssts,1803.0,1207.0,2743.0,2.301,0.439,0.107,0.019,13.0,1.5,lh
     infoDf = collectStats(args.fsDir)
 
+    # Read CCNC healthy control average information
     # meanDf eg
-    #    ,subroi,thickavg,side,thickstd,subject
-    #   0,lh_bankssts,2.577,lh,0.439,NOR01_XXX
-    meanDfLoc = '/ccnc_bin/meanThickness/detailed_mean_2015_12_28.csv'
+    #     ,subroi,thickavg,side,thickstd,subject
+    #    0,lh_bankssts,2.577,lh,0.439,NOR01_XXX
+    #meanDfLoc = '/ccnc_bin/meanThickness/detailed_mean_2015_12_28.csv'
+
+    #     ,subroi,      thickavg, side, thickstd, subject,   roi
+    #    0,lh_bankssts, 2.577,    lh,   0.439,    NOR01_XXX, bankssts
+    meanDfLoc = '/ccnc_bin/meanThickness/detailed_mean_2017_06_16.csv'
     meanDf = pd.read_csv(meanDfLoc, index_col=0)
 
+    # User input for subject name (to be on the graph)
     subjectInitials = raw_input('Subject initial :')
 
-    # Graph
-    draw_thickness_detailed(args.fsDir,
-                            infoDf,
-                            meanDf,
-                            subjectInitials,
-                            'CCNC_mean')
+    # Make line plots of cortical thickness for each hemisphere
+    draw_thickness(args.fsDir,
+                   infoDf, meanDf,
+                   subjectInitials, 'CCNC_mean')
 
     # tksurferCapture.main(args.fsDir, join(args.fsDir,
                                           # 'tmp',
@@ -64,31 +70,35 @@ def reorder_df(df, colName, orderList):
     newDf = newDf.reset_index()
     return newDf
 
-def draw_thickness_detailed(fsDir, infoDf, meanDf, subjName, meanDfName):
+def draw_thickness(fsDir, infoDf, meanDf, subjName, meanDfName):
     # graph order from left
     roiOrder = ['LPFC', 'OFC', 'MPFC', 'LTC', 'MTC', 'SMC', 'PC', 'OCC']
 
-    # Amend information Dfs
-    infoDf['roi'] = infoDf.subroi.str[3:]
-    infoDf['region'] = infoDf.roi.apply(getRegion)
+    # Amend information Dfs for previously created csvs
+    for df_tmp in infoDf, meanDf: 
+        if 'roi' not in df_tmp.columns:
+            df_tmp['roi'] = df_tmp.subroi.str[3:]
+            print("The subject {subjName}'s csv requires editing, to have 'roi' column".
+                  format(subjName=subjName)
+        if 'region' not in df_tmp.columns:
+            df_tmp['region'] = df_tmp.roi.apply(getRegion)
+            print("The subject {subjName}'s csv requires editing, to have 'region' column".
+                  format(subjName=subjName)
 
-    meanDf['roi'] = meanDf.subroi.str[3:]
+    # meanDf to have averaged values for all groups
     meanDf = meanDf.groupby(['roi','side']).mean().reset_index()
-    meanDf['region'] = meanDf.roi.apply(getRegion)
     meanDf.columns = ['roi','side','thickavg','thickstd','region']
 
-
-    # side mean
+    # side group by
     infoDf_gb = infoDf.groupby('side')
     meanDf_gb = meanDf.groupby('side')
-    label = infoDf.roi.unique()
+
 
     fig, axes = plt.subplots(nrows=2, figsize=(22,12))
     fig.suptitle("Cortical thickness in all regions", fontsize=20)
 
-    for gnum, side in enumerate(['lh', 'rh']):
+    for snum, side in enumerate(['lh', 'rh']):
         infodf = infoDf_gb.get_group(side)
-        print infodf
         meandf = meanDf_gb.get_group(side)
 
         # Reorder Dfs
@@ -97,34 +107,36 @@ def draw_thickness_detailed(fsDir, infoDf, meanDf, subjName, meanDfName):
         infodf = reorder_df(infodf, 'region', roiOrder)
         meandf  = reorder_df(meandf, 'region', roiOrder)
 
-        ax = axes[gnum]
+
+        ax = axes[snum]
 
         ax.plot(infodf.thickavg, 'r', label=subjName)
         ax.plot(meandf.thickavg, 'r--', label='CCNC HCs')
 
-        # error bar
-        eb1 = ax.errorbar(range(len(label)),
-                            meandf.thickavg,
-                            meandf.thickstd,
-                            linestyle='None',
-                            marker='^',
-                         label='_nolegend_')
-
+        # errorbar(x, y, std)
+        roiList = infodf.roi.unique()
+        eb1 = ax.errorbar(range(len(roiList)),
+                          meandf.thickavg,
+                          meandf.thickstd,
+                          linestyle='None',
+                          marker='^',
+                          label='_nolegend_')
         eb1[-1][0].set_linestyle('--')
 
+        # Graph settings
         ax.set_ylim(1.0, 5)
         ax.set_xlabel(side, fontsize=16)
-        ax.set_xticks(range(len(label)))
-        ax.set_xticklabels(['' for x in label])
+        ax.set_xticks(range(len(roiList)))
+        ax.set_xticklabels(['' for x in roiList])
         ax.set_xlim(-.5, 32.5)
+        ax.grid(False)
 
         ax.legend()
         legend = ax.legend(frameon = 1)
         frame = legend.get_frame()
         frame.set_facecolor('white')
 
-
-        #fill
+        # Background fill (group discrimination)
         roiDict = get_cortical_rois()
         startNum = 0
         switch = 0
@@ -192,6 +204,9 @@ def dictWithTuple2df(infoDict):
                   'thickavg', 'thickstd',
                   'meancurv', 'gauscurv', 'foldind', 'curvind']
     df['side'] = df['subroi'].str[:2]
+    df['roi'] = = df.subroi.str[3:]
+    df['region'] = df.roi.apply(getRegion)
+
     return df
 
 
@@ -512,11 +527,9 @@ if __name__ == '__main__':
         help='Freesurfer directory location',
         default=os.getcwd())
 
-
     args = parser.parse_args()
 
     os.environ["FREESURFER_HOME"] = '/usr/local/freesurfer'
     os.environ["SUBJECTS_DIR"] = dirname(dirname(args.fsDir))
 
     freesurferSummary(args)
-
