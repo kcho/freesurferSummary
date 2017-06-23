@@ -63,9 +63,6 @@ def freesurferSummary(args):
                                           # 'tmp',
                                           # 'thick_kev_detailed_new.csv'))
 
-
-
-
 def getRegion(roi):
     '''
     find region of the detailed freesurfer label
@@ -185,7 +182,6 @@ def draw_thickness_list(infoDfList, nameList):
 
         regionToHighlight = roiOrder[1::2]
         xCoords = [np.where(roiOrder_array==x)[0] for x in regionToHighlight]
-        #xCoords_nohigh = [np.where(roiOrder_array==x)[0] for x in roiOrder if x not in regionToHighlight]
 
         for x in xCoords:
             ax.axvspan(x[0], x[-1], alpha=0.5)
@@ -207,145 +203,9 @@ def draw_thickness_list(infoDfList, nameList):
         plt.tight_layout(pad=7, w_pad=3, h_pad=0.2)
 
     #fig.show()
-    fname = 'thickness_list.png'
+    fname = 'thickness_summary.png'
     fig.savefig(fname)
     print(fname)
-
-def draw_thickness(fsDir, infoDf, meanDf, subjName, meanDfName):
-    # graph order from left
-    roiOrder = ['LPFC', 'OFC', 'MPFC', 'LTC', 'MTC', 'SMC', 'PC', 'OCC']
-
-    # side group by
-    infoDf_gb = infoDf.groupby('side')
-    meanDf_gb = meanDf.groupby('side')
-
-    fig, axes = plt.subplots(nrows=2, figsize=(22,12), facecolor='white')
-    fig.suptitle("Cortical thickness in all regions", fontsize=20)
-
-    for snum, side in enumerate(['lh', 'rh']):
-        infodf = infoDf_gb.get_group(side)
-        meandf = meanDf_gb.get_group(side)
-
-        # Reorder Dfs
-        infodf = infodf.sort_values(['roi','side'])
-        meandf = meandf.sort_values(['roi','side'])
-        infodf = reorder_df(infodf, 'region', roiOrder)
-        meandf  = reorder_df(meandf, 'region', roiOrder)
-
-        ax = axes[snum]
-
-        ax.plot(infodf.thickavg, linestyle='-', c='r', label=subjName)
-
-        # errorbar(x, y, std)
-        roiList = infodf.roi.unique()
-        if meanDfName == 'CCNC_mean':
-            eb = ax.errorbar(range(len(roiList)),
-                              meandf.thickavg,
-                              meandf.thickstd,
-                              marker='^',
-                              label=meanDfName, 
-                              color='b',
-                              ecolor='b',
-                              alpha=0.7)
-            plotline, caplines, barlinecols = eb
-            barlinecols[0].set_linestyle('--')
-            plotline.set_linestyle('--')
-
-        # Graph settings
-        ax.patch.set_facecolor('white')
-        ax.set_ylim(1.0, 5)
-        ax.set_xlabel(side, fontsize=16)
-        ax.set_xticks(range(len(roiList)))
-        ax.set_xticklabels(['' for x in roiList])
-        ax.set_xlim(-.5, 32.5)
-        ax.grid(False)
-
-        ax.legend()
-        legend = ax.legend(frameon = 1)
-        frame = legend.get_frame()
-        frame.set_facecolor('white')
-
-        # Background fill (group discrimination)
-        roiDict = get_cortical_rois()
-        roiOrder_full = [[x]*len(roiDict[x]) for x in roiOrder]
-        roiOrder_one_list = list(itertools.chain.from_iterable(roiOrder_full))
-        roiOrder_array = np.array(roiOrder_one_list)
-
-        regionToHighlight = roiOrder[0::2]
-        regionToNotHighlight = roiOrder[0::2]
-        xCoords = [np.where(roiOrder_array==x)[0] for x in regionToHighlight]
-        for x in xCoords:
-            col='green'
-            ax.axvspan(x[0], x[-1], alpha=0.5)
-
-        #boundArr = np.array([])
-
-        #for regionNum, region in enumerate(roiOrder):
-            #boundArr = np.append(boundArr, np.tile(regionNum, len(roiDict[region])))
-
-        #print boundArr
-
-        startNum = 0
-        switch = 0
-        x_starting_point = 0
-        for region in roiOrder:
-            if switch == 0:
-                switch = 1 
-                pass
-                alpha = 1
-                col='white'
-                #p = ax.axvspan(x_starting_point-.5, startNum-.5, facecolor=col, alpha=alpha)
-                x_starting_point = startNum
-                startNum = startNum + len(roiDict[region])
-
-                ax.text((x_starting_point-.5 + startNum-.5)/2, 1.2,
-                        region,
-                        horizontalalignment='center',
-                        alpha=.4,
-                        fontsize=15)
-            else:
-                alpha = 0.2
-                col='yellow'
-                #p = ax.axvspan(x_starting_point-.5, startNum-.5, facecolor=col, alpha=alpha)
-                x_starting_point = startNum
-                startNum = startNum + len(roiDict[region])
-                switch = 0 
-
-                ax.text((x_starting_point-.5 + startNum-.5)/2, 1.2,
-                        region,
-                        horizontalalignment='center',
-                        alpha=.4,
-                        fontsize=15)
-
-        ## annotation
-        mergedDf = pd.merge(meandf,
-                            infodf,
-                            on=['roi','side','region'],
-                            how='inner')
-
-        mergedDf['mean_sub_indv'] = mergedDf.thickavg_x - mergedDf.thickavg_y
-        for row in mergedDf[abs(mergedDf['mean_sub_indv']) > 0.5].iterrows():
-            if row[1].mean_sub_indv < 0:
-                col = 'green'
-            else:
-                col = 'red'
-
-            ax.annotate(row[1].roi,
-                        xy = (row[0], row[1].thickavg_y), 
-                        xytext = (row[0], 1.5-row[1].mean_sub_indv/3),
-                        arrowprops = dict(facecolor=col, shrink=0.05, alpha=0.5), 
-                        horizontalalignment=side, 
-                        fontsize=10)
-
-    ax.set_xticklabels(infodf.roi)
-    labels = ax.get_xticklabels()
-    plt.setp(labels, rotation=30)
-    plt.tight_layout(pad=7, w_pad=3, h_pad=0.2)
-    #fig.show()
-    fig.savefig(join(fsDir, basename(subjName)+'_thickness.png'))
-    print(join(fsDir, basename(subjName)+'_thickness.png'))
-
-
 
 def dictWithTuple2df(infoDict):
     df = pd.DataFrame.from_dict(infoDict)
@@ -358,8 +218,6 @@ def dictWithTuple2df(infoDict):
     df['region'] = df.roi.apply(getRegion)
 
     return df
-
-
 
 def getInfoFromLabel(fsDir,roiDict):
     '''
@@ -498,139 +356,6 @@ def collectStats(fsDir):
     # return mean
     return infoDf
 
-def draw_graph(volumeDf):
-    gb = volumeDf.groupby(['side','cortex'])
-    lh_volume_sums={}
-    rh_volume_sums={}
-    cortexList = []
-    for (side,cortex), grp in gb:
-        print cortex
-        if side == 'lh':
-            lh_volume_sums[side+'_'+cortex] = grp['Volume'].sum()
-            cortexList.append(cortex)
-        else:
-            rh_volume_sums[side+'_'+cortex] = grp['Volume'].sum()
-
-    plt.plot(lh_volume_sums.values(),'r')
-    plt.plot(rh_volume_sums.values(),'b')
-    plt.xticks(range(len(cortexList)), cortexList)
-    plt.show()
-
-def getSummary(volumeDf,roiDict):
-    # thalamus : lh, 10, rh, 49
-    # lh_OFC : 1019 1014 1012
-    columnMake = pd.DataFrame.from_dict(roiDict,orient='index').T.stack().reset_index()
-    columnMake.columns = ['order','cortex','subroi']
-
-    volumeDf =  pd.merge(volumeDf,
-             columnMake[['cortex','subroi']],
-             left_on='ROI',
-             right_on='subroi',
-             how='inner').drop('subroi',axis=1)
-
-    return volumeDf
-
-def openStatsTable(fsDir):
-    statsROI = join(fsDir,'stats')
-    filesToRead = 'aparc.stats'
-
-    dfList = []
-    for side in ['lh','rh']:
-        statsFile = join(statsROI,side+'.'+filesToRead)
-        with open(statsFile,'r') as f:
-            lines = f.readlines()
-
-        linesEdited = [re.search('(\w+)\s+(\d+)\s+(\d+)\s+(\d+)',x).group(1,4) for x in lines if re.search('^\w',x)]
-        df = pd.DataFrame(linesEdited)
-        df.columns = ['ROI','Volume']
-        df['Volume'] = df['Volume'].astype(int)
-        df['side']=side
-        dfList.append(df)
-
-    return pd.concat(dfList)
-
-
-def openTable(f_file):
-
-
-
-    with open(f_file,'r') as f:
-        lines = f.readlines()
-    lines_edited = [re.search('^(\d+)\s+(\S+)',x).group(2,1) for x in lines if re.search('^\d',x)]
-    lines_edited_dict = dict(lines_edited)
-
-    return lines_edited_dict
-
-
-def roi_extraction(subjectDir, roiName, roiNumber=False, outputDir=False):
-    '''
-    Extracts ROI from freesurfer output
-    roiName : string
-    roiNumber : list of number
-    '''
-
-    # FREESURFER vs freesurfer
-    inputName =  '{subjectDir}/{freesurferDir}/mri/aparc+aseg.mgz'.format(
-                subjectDir=subjectDir,
-                freesurferDir=freesurferDIR)
-
-    # If the output directory is specified
-    if outputDir:
-        outputName = '{outputDir}/{roiName}.nii.gz'.format(
-                outputDir = outputDir,
-                roiName = roiName)
-    else:
-        outputName = '{subjectDir}/ROI/{roiName}.nii.gz'.format(
-                subjectDir=subjectDir,
-                roiName=roiName)
-
-
-    # If the number of the ROI is secificed
-    if roiNumber:
-        command = 'mri_binarize --i {inputName} \
-                                --match {roiNumber} \
-                                --o {outputName}'.format(
-                                    inputName=inputName,
-                                    roiNumber=roiNumber,
-                                    outputName=outputName)
-
-    else:
-
-
-        command = 'mri_binarize --i {inputName} \
-                                --match {roiNumber} \
-                                --o {outputName}'.format(
-                                    inputName=inputName,
-                                    roiNumber=roiNumber,
-                                    outputName=outputName)
-
-    command = re.sub('\s+',' ',command)
-    output = os.popen(command).read()
-
-
-def concatFsDf(freesurferDirList):
-    dfList = []
-
-    for freesurferDir in freesurferDirList:
-        dfList.append(collectStats_v2(freesurferDir))
-    dfMerged = pd.concat(dfList)
-
-    return dfMerged
-
-def concatDf_to_meanDf(concatDf):
-    meanDf = concatDf.groupby(concatDf.index).mean()
-    infoCols = concatDf.ix[concatDf.index, ['subroi','side']].drop_duplicates()
-    print infoCols
-    return pd.concat([infoCols, meanDf], axis=1)
-
-def subjDirs_to_fsDirs(subjectDirList):
-    freesurferDirList = []
-
-    for subjDir in subjectDirList:
-        freesurferDirList.append(get_freesurferDir(subjDir))
-
-    return freesurferDirList
-
 def get_cortical_rois():
     '''
     returns 8 cortical divisions in dictionary
@@ -686,8 +411,5 @@ if __name__ == '__main__':
         default=False)
 
     args = parser.parse_args()
-
-    #os.environ["FREESURFER_HOME"] = '/usr/local/freesurfer'
-    #os.environ["SUBJECTS_DIR"] = dirname(dirname(args.fsDir))
 
     freesurferSummary(args)
