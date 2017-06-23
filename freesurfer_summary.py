@@ -18,79 +18,52 @@ import time
 
 __author__ = 'kcho'
 plt.style.use('ggplot')
-plt.rcParams['savefig.facecolor'] = 'white'
+
+def getGroupMeanInfo(meanDfLoc):
+    '''
+    Read cortical thickness of all control subjects
+    '''
+
+    df = pd.read_csv(meanDfLoc, index_col=0)
+    if 'roi' not in df.columns or 'region' not in df.columns:
+        df['roi'] = df.subroi.str[3:]
+        df['region'] = df.roi.apply(getRegion)
+        df.to_csv(meanDfLoc)
+
+    # meanDf to have averaged values for all groups
+    meanDf = df.groupby(['roi','side','region']).mean().reset_index()
+    meanDf.columns = ['roi','side','region', 'thickavg','thickstd']
+    df_name = 'CCNC_mean'
+    return meanDf, df_name
 
 def freesurferSummary(args):
     '''
     Output freesurfer summary
     '''
-    if args.fsDirList:
-        fsInfoDf = []
-        fsNames = []
-        for argsFsDir in args.fsDirList:
-            argsSubjNames = raw_input('{0} Subject initial :'.format(argsFsDir))
-            fsNames.append(argsSubjNames)
-            fsInfoDf.append(collectStats(argsFsDir))
+    # Read CCNC healthy control information
+    meanDfLoc = '/ccnc_bin/meanThickness/detailed_mean_2017_06_16.csv'
+    meanDf, meanDf_name = getGroupMeanInfo(meanDfLoc)
 
-        # Make line plots of cortical thickness for each hemisphere
-        draw_thickness_list(fsInfoDf, fsNames)
-    else:
-        # User input for subject name (to be on the graph)
-        subjectInitials = raw_input('Subject initial :')
+    # Collect infoDfs and names
+    fsInfoDf = []
+    fsNames = []
+    for argsFsDir in args.inputDirs:
+        argsSubjNames = raw_input('{0} Subject initial :'.format(argsFsDir))
+        fsNames.append(argsSubjNames)
+        fsInfoDf.append(collectStats(argsFsDir))
 
-        # Collect statistics using freesurfer functions
-        #     mri_annotation2label
-        #     mri_mergelabels
-        #     mris_anatomical_stats --> takes time
-        # Returns infoDf
-        #     ,subroi,numvert,surfarea,grayvol,thickavg,thickstd,meancurv,gauscurv,foldind,curvind,side
-        #     0,lh_bankssts,1803.0,1207.0,2743.0,2.301,0.439,0.107,0.019,13.0,1.5,lh
-        infoDf = collectStats(args.fsDir)
+    # Add CCNC HCs informat
+    fsInfoDf.append(meanDf)
+    fsNames.append(meanDf_name)
 
-        # if secondary dir is given
-        if args.fsDir2:
-            infoDf2 = collectStats(args.fsDir2)
-            subjectInitials_2 = raw_input('Second subject initial :')
-        else:
-            # Read CCNC healthy control average information
-            # meanDf eg
-            #     ,subroi,thickavg,side,thickstd,subject
-            #    0,lh_bankssts,2.577,lh,0.439,NOR01_XXX
-            #meanDfLoc = '/ccnc_bin/meanThickness/detailed_mean_2015_12_28.csv'
-            #     ,subroi,      thickavg, side, thickstd, subject,   roi
-            #    0,lh_bankssts, 2.577,    lh,   0.439,    NOR01_XXX, bankssts
-            meanDfLoc = '/ccnc_bin/meanThickness/detailed_mean_2017_06_16.csv'
-            meanDf = pd.read_csv(meanDfLoc, index_col=0)
-            if 'roi' not in meanDf.columns or 'region' not in meanDf.columns:
-                meanDf['roi'] = meanDf.subroi.str[3:]
-                meanDf['region'] = meanDf.roi.apply(getRegion)
-                meanDf.to_csv(meanDfLoc)
-
-            # meanDf to have averaged values for all groups
-            infoDf2 = meanDf.groupby(['roi','side','region']).mean().reset_index()
-            infoDf2.columns = ['roi','side','region', 'thickavg','thickstd']
-            subjectInitials_2 = 'CCNC_mean'
-
-        draw_thickness(args.fsDir,
-                       infoDf, infoDf2,
-                       subjectInitials, subjectInitials_2)
-    ## Amend information Dfs for previously created csvs
-    #for df_tmp in infoDf, meanDf: 
-        #print df_tmp
-        #if 'roi' not in df_tmp.columns:
-            #df_tmp['roi'] = df_tmp.subroi.str[3:]
-            #print("The subject {subjName}'s csv requires editing, to have 'roi' column".
-                  #format(subjName=subjName))
-        #if 'region' not in df_tmp.columns:
-            #df_tmp['roi'] = df_tmp.subroi.str[3:]
-            #df_tmp['region'] = df_tmp.roi.apply(getRegion)
-            #print("The subject {subjName}'s csv requires editing, to have 'region' column".
-                  #format(subjName=subjName))
-
+    # Make line plots of cortical thickness for each hemisphere
+    draw_thickness_list(fsInfoDf, fsNames)
 
     # tksurferCapture.main(args.fsDir, join(args.fsDir,
                                           # 'tmp',
                                           # 'thick_kev_detailed_new.csv'))
+
+
 
 
 def getRegion(roi):
@@ -117,9 +90,13 @@ def draw_thickness_list(infoDfList, nameList):
     fig, axes = plt.subplots(nrows=2, figsize=(22,12), facecolor='white')
     fig.suptitle("Cortical thickness in all regions", fontsize=20)
 
-
-
+    # color definition
     color=iter(cm.rainbow(np.linspace(0,1,len(infoDfList))))
+
+    # mean infoDf
+    meanDf = infoDfList[-1]
+    roiList = meanDf.roi.unique()
+
     for infoDf, subjName in zip(infoDfList, nameList):
         infoDf_gb = infoDf.groupby('side')
         c = next(color)
@@ -131,10 +108,58 @@ def draw_thickness_list(infoDfList, nameList):
             infodf = reorder_df(infodf, 'region', roiOrder)
 
             ax = axes[snum]
-            ax.plot(infodf.thickavg, c=c, label=subjName)
+            if subjName=='CCNC_mean':
+                #ax.plot(infodf.thickavg, '--', c=c, label=subjName)
+                eb = ax.errorbar(range(len(roiList)),
+                                  infodf.thickavg,
+                                  infodf.thickstd,
+                                  marker='^',
+                                  label=subjName, 
+                                  color='b',
+                                  ecolor='b',
+                                  alpha=0.7)
+                plotline, caplines, barlinecols = eb
+                barlinecols[0].set_linestyle('--')
+                plotline.set_linestyle('--')
+            else:
+                ax.plot(infodf.thickavg, c=c, label=subjName)
+
+                ### annotation
+                mergedDf = pd.merge(meanDf,
+                                    infodf,
+                                    on=['roi','side','region'],
+                                    how='inner')
+                mergedDf['mean_sub_indv'] = mergedDf.thickavg_x - mergedDf.thickavg_y
+
+                # Reorder Dfs
+                mergedDf = mergedDf.sort_values(['roi','side'])
+                mergedDf = reorder_df(mergedDf, 'region', roiOrder)
+
+                for sigNum, row in enumerate(mergedDf[abs(mergedDf['mean_sub_indv']) > 0.5].iterrows()):
+
+                    if (sigNum+1) % 2 == 0:
+                        sign = 1
+                    else:
+                        sign = -1
+                    textLoc_y = row[1].thickavg_y + (sign*0.5)
+
+                    if row[1].mean_sub_indv < 0:
+                        col = 'green'
+                    else:
+                        col = 'red'
+
+                    ax.annotate(row[1].roi,
+                                xy = (row[0], row[1].thickavg_y), 
+                                xycoords='data',
+                                xytext = (row[0], textLoc_y),
+                                textcoords='data',
+                                arrowprops = dict(facecolor=col, 
+                                                  shrinkB=5,
+                                                  alpha=0.5), 
+                                horizontalalignment=side, 
+                                fontsize=15)
 
     # axis settings
-    roiList = infodf.roi.unique()
     for snum, side in enumerate(['lh', 'rh']):
         ax = axes[snum]
         ax.patch.set_facecolor('white')
@@ -155,6 +180,7 @@ def draw_thickness_list(infoDfList, nameList):
         roiDict = get_cortical_rois()
         roiOrder_full = [[x]*len(roiDict[x]) for x in roiOrder]
         roiOrder_one_list = list(itertools.chain.from_iterable(roiOrder_full))
+
         roiOrder_array = np.array(roiOrder_one_list)
 
         regionToHighlight = roiOrder[1::2]
@@ -162,9 +188,6 @@ def draw_thickness_list(infoDfList, nameList):
         #xCoords_nohigh = [np.where(roiOrder_array==x)[0] for x in roiOrder if x not in regionToHighlight]
 
         for x in xCoords:
-            #col='green'
-            #col='#E3FCE4'
-            #ax.axvspan(x[0], x[-1], facecolor=col, alpha=0.5)
             ax.axvspan(x[0], x[-1], alpha=0.5)
 
         startNum = 0
@@ -184,20 +207,17 @@ def draw_thickness_list(infoDfList, nameList):
         plt.tight_layout(pad=7, w_pad=3, h_pad=0.2)
 
     #fig.show()
-    fname = join('thickness_list.png')
+    fname = 'thickness_list.png'
     fig.savefig(fname)
     print(fname)
 
 def draw_thickness(fsDir, infoDf, meanDf, subjName, meanDfName):
-
     # graph order from left
     roiOrder = ['LPFC', 'OFC', 'MPFC', 'LTC', 'MTC', 'SMC', 'PC', 'OCC']
-
 
     # side group by
     infoDf_gb = infoDf.groupby('side')
     meanDf_gb = meanDf.groupby('side')
-
 
     fig, axes = plt.subplots(nrows=2, figsize=(22,12), facecolor='white')
     fig.suptitle("Cortical thickness in all regions", fontsize=20)
@@ -212,25 +232,27 @@ def draw_thickness(fsDir, infoDf, meanDf, subjName, meanDfName):
         infodf = reorder_df(infodf, 'region', roiOrder)
         meandf  = reorder_df(meandf, 'region', roiOrder)
 
-
         ax = axes[snum]
 
-        ax.plot(infodf.thickavg, 'r', label=subjName)
-        ax.plot(meandf.thickavg, 'b--', label=meanDfName)
+        ax.plot(infodf.thickavg, linestyle='-', c='r', label=subjName)
 
         # errorbar(x, y, std)
         roiList = infodf.roi.unique()
         if meanDfName == 'CCNC_mean':
-            eb1 = ax.errorbar(range(len(roiList)),
+            eb = ax.errorbar(range(len(roiList)),
                               meandf.thickavg,
                               meandf.thickstd,
                               marker='^',
-                              label='_nolegend_', 
+                              label=meanDfName, 
                               color='b',
-                              ecolor='b')
-            eb1[-1][0].set_linestyle('--')
+                              ecolor='b',
+                              alpha=0.7)
+            plotline, caplines, barlinecols = eb
+            barlinecols[0].set_linestyle('--')
+            plotline.set_linestyle('--')
 
         # Graph settings
+        ax.patch.set_facecolor('white')
         ax.set_ylim(1.0, 5)
         ax.set_xlabel(side, fontsize=16)
         ax.set_xticks(range(len(roiList)))
@@ -309,11 +331,11 @@ def draw_thickness(fsDir, infoDf, meanDf, subjName, meanDfName):
                 col = 'red'
 
             ax.annotate(row[1].roi,
-                    xy=(row[0], row[1].thickavg_y),
-                    xytext=(row[0], 1.5-row[1].mean_sub_indv/3),
-                    arrowprops=dict(facecolor=col, shrink=0.05),
-                    horizontalalignment=side,
-                    fontsize=20)
+                        xy = (row[0], row[1].thickavg_y), 
+                        xytext = (row[0], 1.5-row[1].mean_sub_indv/3),
+                        arrowprops = dict(facecolor=col, shrink=0.05, alpha=0.5), 
+                        horizontalalignment=side, 
+                        fontsize=10)
 
     ax.set_xticklabels(infodf.roi)
     labels = ax.get_xticklabels()
@@ -450,7 +472,10 @@ def collectStats(fsDir):
     3. Estimates cortical thickness in each merged labels (dict)
     4. Converts dict to pandas Dataframe using dictWithTuple2df
     5. save df to fsDir/tmp/thick_kev_detailed.csv
-    Than mean df is returned.
+
+    Returns infoDf
+        ,subroi,numvert,surfarea,grayvol,thickavg,thickstd,meancurv,gauscurv,foldind,curvind,side
+        0,lh_bankssts,1803.0,1207.0,2743.0,2.301,0.439,0.107,0.019,13.0,1.5,lh
     '''
 
     # cortical regions as a dictionary
@@ -655,24 +680,14 @@ if __name__ == '__main__':
                        output = 'outLoc')))
 
     parser.add_argument(
-        '-d', '--fsDir',
-        help='Freesurfer directory location',
-        default=os.getcwd())
-
-    parser.add_argument(
-        '-d2', '--fsDir2',
-        help='Secondary freesurfer directory location',
-        default=False)
-
-    parser.add_argument(
-        '-l', '--fsDirList',
-        help='List of freesurfer directory locations',
+        '-i', '--inputDirs',
+        help='One or more locations of freesurfer directory',
         nargs='+',
         default=False)
 
     args = parser.parse_args()
 
-    os.environ["FREESURFER_HOME"] = '/usr/local/freesurfer'
-    os.environ["SUBJECTS_DIR"] = dirname(dirname(args.fsDir))
+    #os.environ["FREESURFER_HOME"] = '/usr/local/freesurfer'
+    #os.environ["SUBJECTS_DIR"] = dirname(dirname(args.fsDir))
 
     freesurferSummary(args)
