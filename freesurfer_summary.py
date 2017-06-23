@@ -22,6 +22,9 @@ def freesurferSummary(args):
     Output freesurfer summary
     '''
 
+    # User input for subject name (to be on the graph)
+    subjectInitials = raw_input('Subject initial :')
+
     # Collect statistics using freesurfer functions
     #     mri_annotation2label
     #     mri_mergelabels
@@ -31,24 +34,47 @@ def freesurferSummary(args):
     #     0,lh_bankssts,1803.0,1207.0,2743.0,2.301,0.439,0.107,0.019,13.0,1.5,lh
     infoDf = collectStats(args.fsDir)
 
-    # Read CCNC healthy control average information
-    # meanDf eg
-    #     ,subroi,thickavg,side,thickstd,subject
-    #    0,lh_bankssts,2.577,lh,0.439,NOR01_XXX
-    #meanDfLoc = '/ccnc_bin/meanThickness/detailed_mean_2015_12_28.csv'
+    # if secondary dir is given
+    if args.fsDir2:
+        infoDf2 = collectStats(args.fsDir2)
+        subjectInitials_2 = raw_input('Second subject initial :')
+    else:
+        # Read CCNC healthy control average information
+        # meanDf eg
+        #     ,subroi,thickavg,side,thickstd,subject
+        #    0,lh_bankssts,2.577,lh,0.439,NOR01_XXX
+        #meanDfLoc = '/ccnc_bin/meanThickness/detailed_mean_2015_12_28.csv'
+        #     ,subroi,      thickavg, side, thickstd, subject,   roi
+        #    0,lh_bankssts, 2.577,    lh,   0.439,    NOR01_XXX, bankssts
+        meanDfLoc = '/ccnc_bin/meanThickness/detailed_mean_2017_06_16.csv'
+        meanDf = pd.read_csv(meanDfLoc, index_col=0)
+        if 'roi' not in meanDf.columns or 'region' not in meanDf.columns:
+            meanDf['roi'] = meanDf.subroi.str[3:]
+            meanDf['region'] = meanDf.roi.apply(getRegion)
+            meanDf.to_csv(meanDfLoc)
 
-    #     ,subroi,      thickavg, side, thickstd, subject,   roi
-    #    0,lh_bankssts, 2.577,    lh,   0.439,    NOR01_XXX, bankssts
-    meanDfLoc = '/ccnc_bin/meanThickness/detailed_mean_2017_06_16.csv'
-    meanDf = pd.read_csv(meanDfLoc, index_col=0)
+        # meanDf to have averaged values for all groups
+        infoDf2 = meanDf.groupby(['roi','side','region']).mean().reset_index()
+        infoDf2.columns = ['roi','side','region', 'thickavg','thickstd']
+        subjectInitials_2 = 'CCNC_mean'
 
-    # User input for subject name (to be on the graph)
-    subjectInitials = raw_input('Subject initial :')
+    ## Amend information Dfs for previously created csvs
+    #for df_tmp in infoDf, meanDf: 
+        #print df_tmp
+        #if 'roi' not in df_tmp.columns:
+            #df_tmp['roi'] = df_tmp.subroi.str[3:]
+            #print("The subject {subjName}'s csv requires editing, to have 'roi' column".
+                  #format(subjName=subjName))
+        #if 'region' not in df_tmp.columns:
+            #df_tmp['roi'] = df_tmp.subroi.str[3:]
+            #df_tmp['region'] = df_tmp.roi.apply(getRegion)
+            #print("The subject {subjName}'s csv requires editing, to have 'region' column".
+                  #format(subjName=subjName))
 
     # Make line plots of cortical thickness for each hemisphere
     draw_thickness(args.fsDir,
-                   infoDf, meanDf,
-                   subjectInitials, 'CCNC_mean')
+                   infoDf, infoDf2,
+                   subjectInitials, subjectInitials_2)
 
     # tksurferCapture.main(args.fsDir, join(args.fsDir,
                                           # 'tmp',
@@ -76,20 +102,6 @@ def draw_thickness(fsDir, infoDf, meanDf, subjName, meanDfName):
     # graph order from left
     roiOrder = ['LPFC', 'OFC', 'MPFC', 'LTC', 'MTC', 'SMC', 'PC', 'OCC']
 
-    # Amend information Dfs for previously created csvs
-    for df_tmp in infoDf, meanDf: 
-        if 'roi' not in df_tmp.columns:
-            df_tmp['roi'] = df_tmp.subroi.str[3:]
-            print("The subject {subjName}'s csv requires editing, to have 'roi' column".
-                  format(subjName=subjName))
-        if 'region' not in df_tmp.columns:
-            df_tmp['region'] = df_tmp.roi.apply(getRegion)
-            print("The subject {subjName}'s csv requires editing, to have 'region' column".
-                  format(subjName=subjName))
-
-    # meanDf to have averaged values for all groups
-    meanDf = meanDf.groupby(['roi','side','region']).mean().reset_index()
-    meanDf.columns = ['roi','side','region', 'thickavg','thickstd']
 
     # side group by
     infoDf_gb = infoDf.groupby('side')
@@ -361,6 +373,10 @@ def collectStats(fsDir):
     else:
         infoDf = pd.read_csv(join(fsDir,'tmp','thick_kev_detailed_new.csv'),
                              index_col=0)
+        if 'roi' not in infoDf.columns or 'region' not in infoDf.columns:
+            infoDf['roi'] = infoDf.subroi.str[3:]
+            infoDf['region'] = infoDf.roi.apply(getRegion)
+            infoDf.to_csv(join(fsDir,'tmp','thick_kev_detailed_new.csv'))
 
     # return mean
     return infoDf
@@ -547,9 +563,14 @@ if __name__ == '__main__':
                        output = 'outLoc')))
 
     parser.add_argument(
-        '-f', '--fsDir',
+        '-d', '--fsDir',
         help='Freesurfer directory location',
         default=os.getcwd())
+
+    parser.add_argument(
+        '-d2', '--fsDir2',
+        help='Secondary freesurfer directory location',
+        default=False)
 
     args = parser.parse_args()
 
