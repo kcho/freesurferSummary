@@ -136,9 +136,12 @@ def draw_thickness_list(infoDfList, nameList):
                 for sigNum, row in enumerate(mergedDf[abs(mergedDf['mean_sub_indv']) > 0.5].iterrows()):
                     if (sigNum+1) % 2 == 0:
                         sign = 1
+                        diff = 0.5
                     else:
                         sign = -1
-                    textLoc_y = row[1].thickavg_y + (sign*1.5)
+                        diff = 0
+
+                    textLoc_y = row[1].thickavg_y + (sign*1) + diff
 
                     if row[1].mean_sub_indv < 0:
                         col = 'green'
@@ -163,7 +166,7 @@ def draw_thickness_list(infoDfList, nameList):
         ax = axes[snum]
         ax.patch.set_facecolor('white')
         # Graph settings
-        ax.set_ylim(0, 5)
+        ax.set_ylim(1, 5)
         ax.set_xlabel(side, fontsize=16)
         ax.set_xticks(range(len(roiList)))
         ax.set_xticklabels(['' for x in roiList])
