@@ -2,7 +2,7 @@
 from __future__ import division
 import os
 import re
-from os.path import join, basename, dirname
+from os.path import join, basename, dirname, isfile
 import sys
 import numpy as np
 import pandas as pd
@@ -50,7 +50,7 @@ def freesurferSummary(args):
     for argsFsDir in args.inputDirs:
         argsSubjNames = raw_input('{0} Subject initial :'.format(argsFsDir))
         fsNames.append(argsSubjNames)
-        fsInfoDf.append(collectStats(argsFsDir))
+        fsInfoDf.append(collectStats(os.path.abspath(argsFsDir)))
 
     # Add CCNC HCs informat
     fsInfoDf.append(meanDf)
@@ -254,7 +254,7 @@ def getInfoFromLabel(fsDir,roiDict):
             pbar.update((num/totalNum) * 100)
             num+=1
 
-            print output
+            #print output
 
             thickness = re.search('thickness\s+=\s+(\S+)\s+mm\s+\S+\s+(\S+)', output).group(1,2)
             numvert = re.search('number of vertices\s+=\s+(\S+)', output).group(1)
@@ -339,7 +339,7 @@ def collectStats(fsDir):
     # cortical regions as a dictionary
     roiDict = get_cortical_rois_detailed()
 
-    if not os.path.isfile(join(fsDir,'tmp','thick_kev_detailed_new.csv')):
+    if not isfile(join(fsDir,'tmp','thick_kev_detailed_new.csv')):
         makeLabel(fsDir)
         mergeLabel(fsDir, roiDict)
         infoDict = getInfoFromLabel(fsDir, roiDict)
