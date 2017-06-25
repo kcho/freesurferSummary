@@ -94,6 +94,7 @@ def draw_thickness_list(infoDfList, nameList):
     meanDf = infoDfList[-1]
     roiList = meanDf.roi.unique()
 
+    sig_diff_region = []
     for infoDf, subjName in zip(infoDfList, nameList):
         infoDf_gb = infoDf.groupby('side')
         c = next(color)
@@ -133,35 +134,36 @@ def draw_thickness_list(infoDfList, nameList):
                 mergedDf = reorder_df(mergedDf, 'region', roiOrder)
 
                 for sigNum, row in enumerate(mergedDf[abs(mergedDf['mean_sub_indv']) > 0.5].iterrows()):
-
                     if (sigNum+1) % 2 == 0:
                         sign = 1
                     else:
                         sign = -1
-                    textLoc_y = row[1].thickavg_y + (sign*0.5)
+                    textLoc_y = row[1].thickavg_y + (sign*1.5)
 
                     if row[1].mean_sub_indv < 0:
                         col = 'green'
                     else:
                         col = 'red'
 
-                    ax.annotate(row[1].roi,
-                                xy = (row[0], row[1].thickavg_y), 
-                                xycoords='data',
-                                xytext = (row[0], textLoc_y),
-                                textcoords='data',
-                                arrowprops = dict(facecolor=col, 
-                                                  shrinkB=5,
-                                                  alpha=0.5), 
-                                horizontalalignment=side, 
-                                fontsize=15)
+                    if row[1].roi not in sig_diff_region:
+                        ax.annotate(row[1].roi,
+                                    xy = (row[0], row[1].thickavg_y), 
+                                    xycoords='data',
+                                    xytext = (row[0], textLoc_y),
+                                    textcoords='data',
+                                    arrowprops = dict(facecolor=col, 
+                                                      shrinkB=5,
+                                                      alpha=0.5), 
+                                    horizontalalignment=side, 
+                                    fontsize=15)
+                        sig_diff_region.append(row[1].roi)
 
     # axis settings
     for snum, side in enumerate(['lh', 'rh']):
         ax = axes[snum]
         ax.patch.set_facecolor('white')
         # Graph settings
-        ax.set_ylim(1.0, 5)
+        ax.set_ylim(0, 5)
         ax.set_xlabel(side, fontsize=16)
         ax.set_xticks(range(len(roiList)))
         ax.set_xticklabels(['' for x in roiList])
