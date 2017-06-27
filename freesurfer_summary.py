@@ -47,8 +47,11 @@ def freesurferSummary(args):
     # Collect infoDfs and names
     fsInfoDf = []
     fsNames = []
-    for argsFsDir in args.inputDirs:
-        argsSubjNames = raw_input('{0} Subject initial :'.format(argsFsDir))
+    for fsDirNum, argsFsDir in enumerate(args.inputDirs):
+        if args.nameList:
+            argsSubjNames = args.nameList[fsDirNum]
+        else:
+            argsSubjNames = raw_input('{0} Subject initial :'.format(argsFsDir))
         fsNames.append(argsSubjNames)
         fsInfoDf.append(collectStats(os.path.abspath(argsFsDir)))
 
@@ -57,7 +60,7 @@ def freesurferSummary(args):
     fsNames.append(meanDf_name)
 
     # Make line plots of cortical thickness for each hemisphere
-    draw_thickness_list(fsInfoDf, fsNames)
+    draw_thickness_list(fsInfoDf, fsNames, args.colorList)
 
     # tksurferCapture.main(args.fsDir, join(args.fsDir,
                                           # 'tmp',
@@ -80,7 +83,7 @@ def reorder_df(df, colName, orderList):
     newDf = newDf.reset_index()
     return newDf
 
-def draw_thickness_list(infoDfList, nameList):
+def draw_thickness_list(infoDfList, nameList, colorList):
     # graph order from left
     roiOrder = ['LPFC', 'OFC', 'MPFC', 'LTC', 'MTC', 'SMC', 'PC', 'OCC']
 
@@ -95,8 +98,9 @@ def draw_thickness_list(infoDfList, nameList):
     roiList = meanDf.roi.unique()
 
     sig_diff_region = []
-    for infoDf, subjName in zip(infoDfList, nameList):
+    for infoDfNum, (infoDf, subjName) in enumerate(zip(infoDfList, nameList)):
         infoDf_gb = infoDf.groupby('side')
+        
         c = next(color)
         for snum, side in enumerate(['lh', 'rh']):
             infodf = infoDf_gb.get_group(side)
@@ -141,12 +145,13 @@ def draw_thickness_list(infoDfList, nameList):
                         sign = -1
                         diff = 0
 
-                    textLoc_y = row[1].thickavg_y + (sign*1) + diff
-
                     if row[1].mean_sub_indv < 0:
                         col = 'green'
+                        sign = 1
                     else:
                         col = 'red'
+
+                    textLoc_y = row[1].thickavg_y + (sign*1) + diff
 
                     if row[1].roi not in sig_diff_region:
                         ax.annotate(row[1].roi,
@@ -157,7 +162,7 @@ def draw_thickness_list(infoDfList, nameList):
                                     arrowprops = dict(facecolor=col, 
                                                       shrinkB=5,
                                                       alpha=0.5), 
-                                    horizontalalignment=side, 
+                                    horizontalalignment='center', 
                                     fontsize=15)
                         sig_diff_region.append(row[1].roi)
 
@@ -415,6 +420,30 @@ if __name__ == '__main__':
         nargs='+',
         default=False)
 
+    parser.add_argument(
+        '-n', '--nameList',
+        help='List of legend names for each freesurfer summary',
+        nargs='+',
+        default=False)
+
+    parser.add_argument(
+        '-c', '--colorList',
+        help='List of colors for each freesurfer summary',
+        nargs='+',
+        default=False)
+
+    parser.add_argument(
+        '-b', '--background',
+        help='Shows mean cortical thickness of the healthy controls in the background',
+        default=True)
+
     args = parser.parse_args()
+
+    # if lengths of the lists do not match
+    if not len(args.inputDirs) == len(args.nameList):
+        args.nameList=False
+
+    if not len(args.inputDirs) == len(args.colorList):
+        args.colorList=False
 
     freesurferSummary(args)
