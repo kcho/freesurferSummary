@@ -422,10 +422,12 @@ if __name__ == '__main__':
         description=textwrap.dedent('''\
             {codeName} : 
             ========================================
-            eg) {codeName} --input {in_put} --output {output}
-            '''.format(codeName=basename(__file__),
-                       in_put = 'subjectLoc',
-                       output = 'outLoc')))
+            eg) {codeName} -i YB_FS KCHO_FS
+            eg) {codeName} -i YB_FS KCHO_FS -n Yoobin Kangik
+            eg) {codeName} -i YB_FS KCHO_FS -n Yoobin Kangik -g f m
+            eg) {codeName} -i YB_FS KCHO_FS -n Yoobin Kangik -g f m -c red blue
+            eg) {codeName} -i YB_FS KCHO_FS -n Yoobin Kangik -g f m -c red blue -nb
+            '''.format(codeName=basename(__file__))))
 
     parser.add_argument(
         '-i', '--inputDirs',
@@ -436,6 +438,12 @@ if __name__ == '__main__':
     parser.add_argument(
         '-n', '--nameList',
         help='List of legend names for each freesurfer summary',
+        nargs='+',
+        default=False)
+
+    parser.add_argument(
+        '-g', '--genderList',
+        help='List of genders for each freesurfer summary',
         nargs='+',
         default=False)
 
@@ -454,12 +462,30 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # if lengths of the lists do not match
-    if args.nameList:
-        if not len(args.inputDirs) == len(args.nameList):
-            args.nameList=False
+    # edit this later
+    for i in args.genderList, args.nameList, args.colorList:
+        if i:
+            if not len(args.inputDirs) == len(i):
+                print('The number freesurfer directories : {0}'.format(len(args.inputDirs)))
+                print('The number items given : {0}'.format(len(i)))
+                sys.exit('Please make sure there are the same number of items in each list')
 
-    if args.colorList:
-        if not len(args.inputDirs) == len(args.colorList):
-            args.colorList=False
+    #for i in 'genderList', 'nameList', 'colorList':
+        #if args[i]:
+            #if not len(args.inputDirs) == len(args[i]):
+                #args[i]=False
 
-    freesurferSummary(args)
+    #print args
+    #if args.genderList:
+        #if not len(args.inputDirs) == len(args.nameList):
+            #args.nameList=False
+
+    #if args.nameList:
+        #if not len(args.inputDirs) == len(args.nameList):
+            #args.nameList=False
+
+    #if args.colorList:
+        #if not len(args.inputDirs) == len(args.colorList):
+            #args.colorList=False
+
+    #freesurferSummary(args)
