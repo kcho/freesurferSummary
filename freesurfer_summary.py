@@ -40,9 +40,6 @@ def freesurferSummary(args):
     '''
     Output freesurfer summary
     '''
-    # Read CCNC healthy control information
-    meanDfLoc = '/ccnc_bin/meanThickness/detailed_mean_2017_06_16.csv'
-    meanDf, meanDf_name = getGroupMeanInfo(meanDfLoc)
 
     # Collect infoDfs and names
     fsInfoDf = []
@@ -55,9 +52,15 @@ def freesurferSummary(args):
         fsNames.append(argsSubjNames)
         fsInfoDf.append(collectStats(os.path.abspath(argsFsDir)))
 
-    # Add CCNC HCs informat
-    fsInfoDf.append(meanDf)
-    fsNames.append(meanDf_name)
+    if args.background==True:
+        # Read CCNC healthy control information
+        meanDfLoc = '/ccnc_bin/meanThickness/detailed_mean_2017_06_16.csv'
+        meanDf, meanDf_name = getGroupMeanInfo(meanDfLoc)
+
+        # Add CCNC HCs informat
+        fsInfoDf.append(meanDf)
+        fsNames.append(meanDf_name)
+        args.colorList.append('b')
 
     # Make line plots of cortical thickness for each hemisphere
     draw_thickness_list(fsInfoDf, fsNames, args.colorList)
@@ -101,7 +104,11 @@ def draw_thickness_list(infoDfList, nameList, colorList):
     for infoDfNum, (infoDf, subjName) in enumerate(zip(infoDfList, nameList)):
         infoDf_gb = infoDf.groupby('side')
         
-        c = next(color)
+        if colorList:
+            c = colorList[infoDfNum]
+        else:
+            c = next(color)
+
         for snum, side in enumerate(['lh', 'rh']):
             infodf = infoDf_gb.get_group(side)
 
@@ -440,10 +447,12 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # if lengths of the lists do not match
-    if not len(args.inputDirs) == len(args.nameList):
-        args.nameList=False
+    if args.nameList:
+        if not len(args.inputDirs) == len(args.nameList):
+            args.nameList=False
 
-    if not len(args.inputDirs) == len(args.colorList):
-        args.colorList=False
+    if args.colorList:
+        if not len(args.inputDirs) == len(args.colorList):
+            args.colorList=False
 
     freesurferSummary(args)
