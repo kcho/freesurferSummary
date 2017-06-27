@@ -45,6 +45,7 @@ def freesurferSummary(args):
     fsInfoDf = []
     fsNames = []
     for fsDirNum, argsFsDir in enumerate(args.inputDirs):
+        print(argsFsDir)
         if args.nameList:
             argsSubjNames = args.nameList[fsDirNum]
         else:
@@ -52,7 +53,7 @@ def freesurferSummary(args):
         fsNames.append(argsSubjNames)
         fsInfoDf.append(collectStats(os.path.abspath(argsFsDir)))
 
-    if args.background==True:
+    if args.nobackground==False:
         # Read CCNC healthy control information
         meanDfLoc = '/ccnc_bin/meanThickness/detailed_mean_2017_06_16.csv'
         meanDf, meanDf_name = getGroupMeanInfo(meanDfLoc)
@@ -222,7 +223,7 @@ def draw_thickness_list(infoDfList, nameList, colorList):
     #fig.show()
     fname = 'thickness_summary.png'
     fig.savefig(fname)
-    print(fname)
+    print('feh %s' %join(os.getcwd(), fname))
 
 def dictWithTuple2df(infoDict):
     df = pd.DataFrame.from_dict(infoDict)
@@ -242,9 +243,6 @@ def getInfoFromLabel(fsDir,roiDict):
     '''
 
     infoDict={}
-
-    print 'fsDir',fsDir
-    print 'roiDict', roiDict
 
     pbar = ProgressBar().start()
     totalNum = 2 * len(roiDict.keys())
@@ -333,7 +331,7 @@ def makeLabel(fsDir):
                                     side=side, 
                                     outDir=labelOutDir)
 
-        print re.sub('\s+',' ',command)
+        #print re.sub('\s+',' ',command)
         os.popen(re.sub('\s+',' ',command)).read()
 
 def collectStats(fsDir):
@@ -440,9 +438,10 @@ if __name__ == '__main__':
         default=False)
 
     parser.add_argument(
-        '-b', '--background',
-        help='Shows mean cortical thickness of the healthy controls in the background',
-        default=True)
+        '-nb', '--nobackground',
+        help='Removes mean cortical thickness graph of the healthy controls in the background',
+        action='store_true',
+        default=False)
 
     args = parser.parse_args()
 
