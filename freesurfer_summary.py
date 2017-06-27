@@ -61,7 +61,6 @@ def freesurferSummary(args):
         # Add CCNC HCs informat
         fsInfoDf.append(meanDf)
         fsNames.append(meanDf_name)
-        args.colorList.append('b')
 
     # Make line plots of cortical thickness for each hemisphere
     draw_thickness_list(fsInfoDf, fsNames, args.colorList)
@@ -106,7 +105,11 @@ def draw_thickness_list(infoDfList, nameList, colorList):
         infoDf_gb = infoDf.groupby('side')
         
         if colorList:
-            c = colorList[infoDfNum]
+            # if meanDf is on, colorList is one shorter.
+            try:
+                c = colorList[infoDfNum]
+            except:
+                c = 'b'
         else:
             c = next(color)
 
