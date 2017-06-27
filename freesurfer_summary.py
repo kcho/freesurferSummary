@@ -55,7 +55,8 @@ def freesurferSummary(args):
 
     if args.nobackground==False:
         # Read CCNC healthy control information
-        meanDfLoc = '/ccnc_bin/meanThickness/detailed_mean_2017_06_16.csv'
+        meanDfLoc = '/ccnc_bin/meanThickness/ccnc_hc_information_2017_06_28.csv'
+        #detailed_mean_2017_06_16.csv
         meanDf, meanDf_name = getGroupMeanInfo(meanDfLoc)
 
         # Add CCNC HCs informat
@@ -274,14 +275,18 @@ def getInfoFromLabel(fsDir,roiDict):
 
             #print output
 
-            thickness = re.search('thickness\s+=\s+(\S+)\s+mm\s+\S+\s+(\S+)', output).group(1,2)
-            numvert = re.search('number of vertices\s+=\s+(\S+)', output).group(1)
-            surfarea = re.search('total surface area\s+=\s+(\S+)', output).group(1)
-            grayvol = re.search('total gray matter volume\s+=\s+(\S+)', output).group(1)
-            meancurv = re.search('average integrated rectified mean curvature\s+=\s+(\S+)', output).group(1)
-            gauscurv = re.search('average integrated rectified Gaussian curvature\s+=\s+(\S+)', output).group(1)
-            foldind = re.search('folding index\s+=\s+(\S+)', output).group(1)
-            curvind = re.search('intrinsic curvature index\s+=\s+(\S+)', output).group(1)
+            try:
+                thickness = re.search('thickness\s+=\s+(\S+)\s+mm\s+\S+\s+(\S+)', output).group(1,2)
+                numvert = re.search('number of vertices\s+=\s+(\S+)', output).group(1)
+                surfarea = re.search('total surface area\s+=\s+(\S+)', output).group(1)
+                grayvol = re.search('total gray matter volume\s+=\s+(\S+)', output).group(1)
+                meancurv = re.search('average integrated rectified mean curvature\s+=\s+(\S+)', output).group(1)
+                gauscurv = re.search('average integrated rectified Gaussian curvature\s+=\s+(\S+)', output).group(1)
+                foldind = re.search('folding index\s+=\s+(\S+)', output).group(1)
+                curvind = re.search('intrinsic curvature index\s+=\s+(\S+)', output).group(1)
+            except:
+                sys.exit('{0} : re.search with mris_antomical_stats not working. Check row data or FS environment'.format(fsDir))
+                
 
             thickness = tuple([float(x) for x in thickness])
             infoDict[side+'_'+cortex] = [float(x) for x in [numvert, surfarea, grayvol,
