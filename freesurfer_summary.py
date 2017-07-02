@@ -36,14 +36,48 @@ def getGroupMeanInfo(meanDfLoc):
     df_name = 'CCNC_mean'
     return meanDf, df_name
 
+def makeMean(args):
+    cortical_dfs = pd.DataFrame()
+    subcortical_dfs = pd.DataFrame()
+    pbar = ProgressBar().start()
+    for fsDirNum, argsFsDir in enumerate(args.inputDirs):
+        pbar.update((fsDirNum/len(args.inputDirs)) * 100)
+        # aparcstats2table
+        cortical_df = aparcstats2table(os.path.abspath(argsFsDir), 'aparc')
+        cortical_dfs = pd.concat([cortical_dfs, cortical_df])
+
+        # asegstats2table
+        # df.columns = ['roi', 'volume', 'region']
+        # regions are subocortex
+        subcortical_df =  asegstats2table(os.path.abspath(argsFsDir))
+        subcortical_dfs = pd.concat([subcortical_dfs, subcortical_df])
+    pbar.finish()
+
+    mean_cortical_dfs = cortical_dfs.groupby(['side', 'roi', 'region']).mean()
+    mean_subcortical_dfs = subcortical_dfs.groupby(['roi', 'region']).mean()
+
+    # thickstd : standard deviation of thickness across subjects
+    # thicknessstd : mean of standard deviations of thicknness in each regions
+    mean_cortical_dfs['volumestd'] = cortical_dfs.groupby(['side', 'roi', 'region']).std()['volume']
+    mean_cortical_dfs['thickstd'] = cortical_dfs.groupby(['side', 'roi', 'region']).std()['thickness']
+    mean_subcortical_dfs['volumestd'] = subcortical_dfs.groupby(['roi', 'region']).std()['volume']
+
+    mean_cortical_dfs.to_csv('mean_cortical_dfs_{date}.csv'.format(
+        date = time.strftime("%Y_%m_%d")))
+    mean_subcortical_dfs.to_csv('mean_subcortical_dfs_{date}.csv'.format(
+        date = time.strftime("%Y_%m_%d")))
+    #print mean_subcortical_dfs
+
 def freesurferSummary(args):
     '''
     Output freesurfer summary
     '''
 
     # Collect infoDfs and names
-    fsInfoDf = []
+    cortical_dfs = []
+    subcortical_dfs = []
     fsNames = []
+
     for fsDirNum, argsFsDir in enumerate(args.inputDirs):
         print(argsFsDir)
         if args.nameList:
@@ -51,20 +85,39 @@ def freesurferSummary(args):
         else:
             argsSubjNames = raw_input('{0} Subject initial :'.format(argsFsDir))
         fsNames.append(argsSubjNames)
-        fsInfoDf.append(collectStats(os.path.abspath(argsFsDir)))
+
+        # Label approach
+        #fsInfoDf.append(collectStats(os.path.abspath(argsFsDir)))
+
+        # aparcstats2table
+        cortical_df = aparcstats2table(os.path.abspath(argsFsDir), 'aparc')
+        cortical_df['subject'] = argsSubjNames
+        cortical_dfs.append(cortical_df)
+
+        # asegstats2table
+        # df.columns = ['roi', 'volume', 'region']
+        # regions are subocortex
+        subcortical_df =  asegstats2table(os.path.abspath(argsFsDir))
+        subcortical_df['subject'] =  argsSubjNames
+        subcortical_dfs.append(subcortical_df)
 
     if args.nobackground==False:
         # Read CCNC healthy control information
-        meanDfLoc = '/ccnc_bin/meanThickness/ccnc_hc_information_2017_06_28.csv'
-        #detailed_mean_2017_06_16.csv
-        meanDf, meanDf_name = getGroupMeanInfo(meanDfLoc)
+        #meanDfLoc = '/ccnc_bin/meanThickness/ccnc_hc_information_2017_06_28.csv'
+        mean_cortical_df_loc = '/Volume/CCNC_BI_3T/freesurfer/NOR/mean_cortical_dfs_2017_07_02.csv'
+        mean_subcortical_df_loc = '/Volume/CCNC_BI_3T/freesurfer/NOR/mean_subcortical_dfs_2017_07_02.csv'
+        mean_cortical_df = pd.read_csv(mean_cortical_df_loc)
+        mean_subcortical_df = pd.read_csv(mean_subcortical_df_loc)
 
         # Add CCNC HCs informat
-        fsInfoDf.append(meanDf)
-        fsNames.append(meanDf_name)
+        cortical_dfs.append(mean_cortical_df)
+        subcortical_dfs.append(mean_subcortical_df)
+        fsNames.append('CCNC_mean')
 
     # Make line plots of cortical thickness for each hemisphere
-    draw_thickness_list(fsInfoDf, fsNames, args.colorList)
+    draw_thickness_list(cortical_dfs, fsNames, args.colorList)
+    draw_volume_list(cortical_dfs, fsNames, args.colorList)
+    draw_subcortical_volume_list(subcortical_dfs, fsNames, args.colorList)
 
     # tksurferCapture.main(args.fsDir, join(args.fsDir,
                                           # 'tmp',
@@ -80,12 +133,274 @@ def getRegion(roi):
         if roi in roiList:
             return region
 
-
 def reorder_df(df, colName, orderList):
     gb = df.groupby(colName)
     newDf = pd.concat([gb.get_group(x) for x in orderList])
     newDf = newDf.reset_index()
     return newDf
+
+def draw_subcortical_volume_list(infoDfList, nameList, colorList):
+    # graph order from left
+    fig, axes = plt.subplots(nrows=2, figsize=(22,12), facecolor='white')
+    fig.suptitle("Sub-cortical Volume Summary", fontsize=20)
+
+    # color definition
+    color=iter(cm.rainbow(np.linspace(0,1,len(infoDfList))))
+
+    # mean infoDf
+    meanDf = infoDfList[-1]
+    roiList = meanDf.roi.unique()
+
+    sig_diff_region = []
+    for infoDfNum, (infoDf, subjName) in enumerate(zip(infoDfList, nameList)):
+        if colorList:
+            # if meanDf is on, colorList is one shorter.
+            try:
+                c = colorList[infoDfNum]
+            except:
+                c = 'b'
+        else:
+            c = next(color)
+
+        #infodf = reorder_df(infodf, 'region', roiOrder)
+        
+        large_rois = ['EstimatedTotalIntraCranialVol', 'TotalGrayVol', 'CortexVol', 'CorticalWhiteMatterVol', 'lhCortexVol', 'rhCortexVol', 'lhCorticalWhiteMatterVol', 'rhCorticalWhiteMatterVol', 'Left-Cerebellum-Cortex', 'Left-Cerebellum-White-Matter', 'Right-Cerebellum-Cortex', 'Right-Cerebellum-White-Matter', 'Brain-Stem']
+
+        small_rois = ['CSF', '3rd-Ventricle', '4th-Ventricle', '5th-Ventricle', 'CC_Anterior', 'CC_Central', 'CC_Mid_Anterior', 'CC_Mid_Posterior', 'CC_Posterior', 'Left-Accumbens-area', 'Left-Amygdala', 'Left-Caudate', 'Left-Hippocampus', 'Left- Inf-Lat-Vent', 'Left-Lateral-Ventricle', 'Left-Pallidum', 'Left-Putamen', 'Left-Thalamus-Proper', 'Right-Accumbens-    area', 'Right-Amygdala', 'Right-Caudate', 'Right-Hippocampus', 'Right-Inf-Lat-Vent', 'Right-Lateral-Ventricle', 'Right-Pallidum', 'Right-Putamen', 'Right-Thalamus-Proper']
+
+        for graphNum, roi_sets in enumerate([large_rois, small_rois]):
+            ax = axes[graphNum]
+            df = infoDf.loc[(infoDf.roi.isin(roi_sets))]
+            df = df.set_index('roi').reindex(roi_sets).reset_index()
+            print df
+            if subjName=='CCNC_mean':
+                #ax.plot(infodf.thickavg, '--', c=c, label=subjName)
+                eb = ax.errorbar(range(len(df.roi.unique())),
+                                  df.volume,
+                                  df.volumestd*2,
+                                  marker='^',
+                                  label=subjName, 
+                                  color='b',
+                                  ecolor='b',
+                                  alpha=0.7)
+                plotline, caplines, barlinecols = eb
+                barlinecols[0].set_linestyle('--')
+                plotline.set_linestyle('--')
+            else:
+                ax.plot(df.volume, c=c, label=subjName)
+
+                ### annotation
+                meanDf_set = meanDf.loc[(meanDf.roi.isin(roi_sets))]
+                mergedDf = pd.merge(meanDf_set,
+                                    df,
+                                    on=['roi','region'],
+                                    how='inner')
+                mergedDf['mean_sub_indv'] = mergedDf.volume_x - mergedDf.volume_y
+
+                # Reorder Dfs
+                mergedDf = mergedDf.sort_values('roi')
+                #mergedDf = reorder_df(mergedDf, 'region', roiOrder)
+
+                #for sigNum, row in enumerate(mergedDf[abs(mergedDf['mean_sub_indv']) > 0.5].iterrows()):
+                # greater than two standard deviation
+                for sigNum, row in enumerate(mergedDf[abs(mergedDf['mean_sub_indv']) > mergedDf['volumestd']*2].iterrows()):
+                    if (sigNum+1) % 2 == 0:
+                        sign = 1
+                        diff = 2500
+                    else:
+                        sign = -1
+                        diff = 0
+
+                    if row[1].mean_sub_indv < 0:
+                        col = 'green'
+                        sign = 1
+                    else:
+                        col = 'red'
+
+                    textLoc_y = row[1].volume_y + (sign * 5000) + diff
+
+                    if row[1].roi not in sig_diff_region:
+                        ax.annotate(row[1].roi,
+                                    xy = (row[0], row[1].volume_y), 
+                                    xycoords='data',
+                                    xytext = (row[0], textLoc_y),
+                                    textcoords='data',
+                                    arrowprops = dict(facecolor=col, 
+                                                      shrinkB=5,
+                                                      alpha=0.5), 
+                                    horizontalalignment='center', 
+                                    fontsize=15)
+                        sig_diff_region.append(row[1].roi)
+
+        # axis settings
+            #ax = axes[snum]
+        ax.patch.set_facecolor('white')
+        # Graph settings
+        #ax.set_ylim(-5000, 35000)
+        ax.set_xlabel('Subcortical ROI', fontsize=16)
+        ax.set_xticks(range(len(roiList)))
+        ax.set_xticklabels(['' for x in roiList])
+        ax.set_xlim(-.5, 32.5)
+        ax.grid(False)
+
+        ax.legend()
+        legend = ax.legend(frameon = 1)
+        frame = legend.get_frame()
+        frame.set_facecolor('white')
+
+        ax.set_xticklabels(infoDf.roi)
+    labels = ax.get_xticklabels()
+    plt.setp(labels, rotation=30)
+    plt.tight_layout(pad=7, w_pad=3, h_pad=0.2)
+
+    #fig.show()
+    fname = 'subcortical_volume_summary.png'
+    fig.savefig(fname)
+    print('feh %s' %join(os.getcwd(), fname))
+
+def draw_volume_list(infoDfList, nameList, colorList):
+    # graph order from left
+    roiOrder = ['LPFC', 'OFC', 'MPFC', 'LTC', 'MTC', 'SMC', 'PC', 'OCC']
+
+    fig, axes = plt.subplots(nrows=2, figsize=(22,12), facecolor='white')
+    fig.suptitle("Cortical Volume Summary", fontsize=20)
+
+    # color definition
+    color=iter(cm.rainbow(np.linspace(0,1,len(infoDfList))))
+
+    # mean infoDf
+    meanDf = infoDfList[-1]
+    roiList = meanDf.roi.unique()
+
+    sig_diff_region = []
+    for infoDfNum, (infoDf, subjName) in enumerate(zip(infoDfList, nameList)):
+        infoDf_gb = infoDf.groupby('side')
+        
+        if colorList:
+            # if meanDf is on, colorList is one shorter.
+            try:
+                c = colorList[infoDfNum]
+            except:
+                c = 'b'
+        else:
+            c = next(color)
+
+        for snum, side in enumerate(['lh', 'rh']):
+            infodf = infoDf_gb.get_group(side)
+
+            # Reorder Dfs
+            infodf = infodf.sort_values(['roi','side'])
+            infodf = reorder_df(infodf, 'region', roiOrder)
+
+            ax = axes[snum]
+            if subjName=='CCNC_mean':
+                #ax.plot(infodf.thickavg, '--', c=c, label=subjName)
+                eb = ax.errorbar(range(len(roiList)),
+                                  infodf.volume,
+                                  infodf.volumestd*2,
+                                  marker='^',
+                                  label=subjName, 
+                                  color='b',
+                                  ecolor='b',
+                                  alpha=0.7)
+                plotline, caplines, barlinecols = eb
+                barlinecols[0].set_linestyle('--')
+                plotline.set_linestyle('--')
+            else:
+                ax.plot(infodf.volume, c=c, label=subjName)
+
+                ### annotation
+                mergedDf = pd.merge(meanDf,
+                                    infodf,
+                                    on=['roi','side','region'],
+                                    how='inner')
+                mergedDf['mean_sub_indv'] = mergedDf.volume_x - mergedDf.volume_y
+
+                # Reorder Dfs
+                mergedDf = mergedDf.sort_values(['roi','side'])
+                mergedDf = reorder_df(mergedDf, 'region', roiOrder)
+
+                #for sigNum, row in enumerate(mergedDf[abs(mergedDf['mean_sub_indv']) > 0.5].iterrows()):
+                # greater than two standard deviation
+                for sigNum, row in enumerate(mergedDf[abs(mergedDf['mean_sub_indv']) > mergedDf['volumestd']*2].iterrows()):
+                    if (sigNum+1) % 2 == 0:
+                        sign = 1
+                        diff = 2500
+                    else:
+                        sign = -1
+                        diff = 0
+
+                    if row[1].mean_sub_indv < 0:
+                        col = 'green'
+                        sign = 1
+                    else:
+                        col = 'red'
+
+                    textLoc_y = row[1].volume_y + (sign * 5000) + diff
+
+                    if row[1].roi not in sig_diff_region:
+                        ax.annotate(row[1].roi,
+                                    xy = (row[0], row[1].volume_y), 
+                                    xycoords='data',
+                                    xytext = (row[0], textLoc_y),
+                                    textcoords='data',
+                                    arrowprops = dict(facecolor=col, 
+                                                      shrinkB=5,
+                                                      alpha=0.5), 
+                                    horizontalalignment='center', 
+                                    fontsize=15)
+                        sig_diff_region.append(row[1].roi)
+
+    # axis settings
+    for snum, side in enumerate(['lh', 'rh']):
+        ax = axes[snum]
+        ax.patch.set_facecolor('white')
+        # Graph settings
+        ax.set_ylim(-5000, 35000)
+        ax.set_xlabel(side, fontsize=16)
+        ax.set_xticks(range(len(roiList)))
+        ax.set_xticklabels(['' for x in roiList])
+        ax.set_xlim(-.5, 32.5)
+        ax.grid(False)
+
+        ax.legend()
+        legend = ax.legend(frameon = 1)
+        frame = legend.get_frame()
+        frame.set_facecolor('white')
+
+        # Background fill (group discrimination)
+        roiDict = get_cortical_rois()
+        roiOrder_full = [[x]*len(roiDict[x]) for x in roiOrder]
+        roiOrder_one_list = list(itertools.chain.from_iterable(roiOrder_full))
+
+        roiOrder_array = np.array(roiOrder_one_list)
+
+        regionToHighlight = roiOrder[1::2]
+        xCoords = [np.where(roiOrder_array==x)[0] for x in regionToHighlight]
+
+        for x in xCoords:
+            ax.axvspan(x[0], x[-1], alpha=0.5)
+
+        startNum = 0
+        for region in roiOrder:
+            x_starting_point = startNum
+            startNum = startNum + len(roiDict[region])
+
+            ax.text((x_starting_point-.5 + startNum-.5)/2, 1.2,
+                    region,
+                    horizontalalignment='center',
+                    alpha=.4,
+                    fontsize=15)
+
+        ax.set_xticklabels(infodf.roi)
+        labels = ax.get_xticklabels()
+        plt.setp(labels, rotation=30)
+        plt.tight_layout(pad=7, w_pad=3, h_pad=0.2)
+
+    #fig.show()
+    fname = 'volume_summary.png'
+    fig.savefig(fname)
+    print('feh %s' %join(os.getcwd(), fname))
 
 def draw_thickness_list(infoDfList, nameList, colorList):
     # graph order from left
@@ -125,8 +440,8 @@ def draw_thickness_list(infoDfList, nameList, colorList):
             if subjName=='CCNC_mean':
                 #ax.plot(infodf.thickavg, '--', c=c, label=subjName)
                 eb = ax.errorbar(range(len(roiList)),
-                                  infodf.thickavg,
-                                  infodf.thickstd,
+                                  infodf.thickness,
+                                  infodf.thickstd*2,
                                   marker='^',
                                   label=subjName, 
                                   color='b',
@@ -136,20 +451,21 @@ def draw_thickness_list(infoDfList, nameList, colorList):
                 barlinecols[0].set_linestyle('--')
                 plotline.set_linestyle('--')
             else:
-                ax.plot(infodf.thickavg, c=c, label=subjName)
+                ax.plot(infodf.thickness, c=c, label=subjName)
 
                 ### annotation
                 mergedDf = pd.merge(meanDf,
                                     infodf,
                                     on=['roi','side','region'],
                                     how='inner')
-                mergedDf['mean_sub_indv'] = mergedDf.thickavg_x - mergedDf.thickavg_y
+                mergedDf['mean_sub_indv'] = mergedDf.thickness_x - mergedDf.thickness_y
 
                 # Reorder Dfs
                 mergedDf = mergedDf.sort_values(['roi','side'])
                 mergedDf = reorder_df(mergedDf, 'region', roiOrder)
 
-                for sigNum, row in enumerate(mergedDf[abs(mergedDf['mean_sub_indv']) > 0.5].iterrows()):
+                # Greater than two standard deviation
+                for sigNum, row in enumerate(mergedDf[abs(mergedDf['mean_sub_indv']) > mergedDf['thickstd'] *2].iterrows()):
                     if (sigNum+1) % 2 == 0:
                         sign = 1
                         diff = 0.5
@@ -163,11 +479,11 @@ def draw_thickness_list(infoDfList, nameList, colorList):
                     else:
                         col = 'red'
 
-                    textLoc_y = row[1].thickavg_y + (sign*1) + diff
+                    textLoc_y = row[1].thickness_y + (sign*1) + diff
 
                     if row[1].roi not in sig_diff_region:
                         ax.annotate(row[1].roi,
-                                    xy = (row[0], row[1].thickavg_y), 
+                                    xy = (row[0], row[1].thickness_y), 
                                     xycoords='data',
                                     xytext = (row[0], textLoc_y),
                                     textcoords='data',
@@ -295,7 +611,6 @@ def getInfoFromLabel(fsDir,roiDict):
     pbar.finish()
     return infoDict
 
-
 def mergeLabel(fsDir, roiDict):
     '''
     Merge labels into one label
@@ -314,7 +629,6 @@ def mergeLabel(fsDir, roiDict):
                     2>/dev/null'.format(inLabel = inLabelForms,
                                         outLabel = outLabel)
             os.popen(command).read()
-
 
 def makeLabel(fsDir):
     '''
@@ -339,8 +653,75 @@ def makeLabel(fsDir):
                                     side=side, 
                                     outDir=labelOutDir)
 
+
         #print re.sub('\s+',' ',command)
         os.popen(re.sub('\s+',' ',command)).read()
+
+def asegstats2table(fsDir):
+    os.environ["FREESURFER_HOME"] = '/usr/local/freesurfer'
+    os.environ["SUBJECTS_DIR"] = dirname(fsDir)
+
+    output_text = join(fsDir, 'tmp', 'subcortex_table.txt')
+    command = 'asegstats2table \
+            --subjects {dirName} \
+            -t {output_text}'.format(dirName = basename(fsDir),
+                                     output_text = output_text)
+
+    if not isfile(output_text):
+        os.popen(command).read()
+    df = pd.read_table(output_text).T.reset_index()
+    df = df.drop(0)
+    df.columns = ['roi', 'volume']
+    df['region'] = 'subcortex'
+    df['volume'] = df['volume'].astype('float')
+
+    return df
+
+def aparcstats2table(fsDir, parc):
+    os.environ["FREESURFER_HOME"] = '/usr/local/freesurfer'
+    os.environ["SUBJECTS_DIR"] = dirname(fsDir)
+
+    allDf = pd.DataFrame()
+    measures = 'volume', 'thickness', 'thicknessstd'
+
+    for side in 'lh', 'rh':
+        for measure in measures:
+            output_text = join(fsDir, 'tmp', '{0}_{1}_table.txt'.format(side, measure))
+            command = 'aparcstats2table \
+                    --hemi {side} \
+                    --subjects {dirName} \
+                    --parc {parc} \
+                    --meas {measure} \
+                    -t {output_text}'.format(side = side,
+                                             dirName = basename(fsDir),
+                                             parc = parc,
+                                             measure = measure,
+                                             output_text = output_text)
+
+            if not isfile(output_text):
+                os.popen(command).read()
+
+            df = pd.read_table(output_text).T
+            df = df.drop(df.index[0])
+            df.columns = ['value']
+            df['roi'] = df.index.str.extract('[rl]h_(\S+)_{0}'.format(measure), expand=False)
+            df['side'] = side
+            df['measure'] = measure
+            df['region'] = df.roi.apply(getRegion)
+
+            df = df.reset_index()
+            allDf = pd.concat([allDf, df[['roi', 'region', 'side', 'measure', 'value']]])
+
+    allDf = pd.pivot_table(allDf, 
+                           values='value', 
+                           index=['side','roi', 'region'], 
+                           columns='measure', 
+                           aggfunc=np.sum)
+    allDf = allDf.reset_index()
+    for measure in measures:
+        allDf[measure] = allDf[measure].astype('float')
+
+    return allDf
 
 def collectStats(fsDir):
     '''
@@ -459,6 +840,12 @@ if __name__ == '__main__':
         action='store_true',
         default=False)
 
+    parser.add_argument(
+        '-m', '--makeMean',
+        help='Make mean df from the given fsDirs',
+        action='store_true',
+        default=False)
+
     args = parser.parse_args()
 
     # if lengths of the lists do not match
@@ -470,22 +857,9 @@ if __name__ == '__main__':
                 print('The number items given : {0}'.format(len(i)))
                 sys.exit('Please make sure there are the same number of items in each list')
 
-    #for i in 'genderList', 'nameList', 'colorList':
-        #if args[i]:
-            #if not len(args.inputDirs) == len(args[i]):
-                #args[i]=False
+    # Make mean
+    if args.makeMean:
+        makeMean(args)
+    else:
+        freesurferSummary(args)
 
-    #print args
-    #if args.genderList:
-        #if not len(args.inputDirs) == len(args.nameList):
-            #args.nameList=False
-
-    #if args.nameList:
-        #if not len(args.inputDirs) == len(args.nameList):
-            #args.nameList=False
-
-    #if args.colorList:
-        #if not len(args.inputDirs) == len(args.colorList):
-            #args.colorList=False
-
-    #freesurferSummary(args)
