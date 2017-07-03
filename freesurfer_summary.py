@@ -386,7 +386,7 @@ def draw_subcortical_volume_list(infoDfList, nameList, colorList):
                 #ax.set_xticklabels(['' for x in roiList])
                 ax.set_xlim(-.5, len(df.roi)+0.5) 
                 ax.grid(False)
-                ax.autoscale(enable=True, axis='x', tight=True)
+                ax.autoscale(enable=True, axis='x')
 
                 ax.set_xticklabels(df.roi)
                 labels = ax.get_xticklabels()
