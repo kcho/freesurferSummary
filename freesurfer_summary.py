@@ -2,18 +2,23 @@
 from __future__ import division
 import os
 import re
+import seaborn as sns
 from os.path import join, basename, dirname, isfile
 import sys
 import numpy as np
 import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 from matplotlib.pyplot import cm 
 import argparse
 import itertools
 import textwrap
 from progressbar import ProgressBar
 import time
+from sklearn.cluster import KMeans
+import warnings
+warnings.filterwarnings("ignore", 'This pattern has match groups')
 #import tksurferCapture
 
 __author__ = 'kcho'
@@ -115,8 +120,8 @@ def freesurferSummary(args):
         fsNames.append('CCNC_mean')
 
     # Make line plots of cortical thickness for each hemisphere
-    draw_thickness_list(cortical_dfs, fsNames, args.colorList)
-    draw_volume_list(cortical_dfs, fsNames, args.colorList)
+    #draw_thickness_list(cortical_dfs, fsNames, args.colorList)
+    #draw_volume_list(cortical_dfs, fsNames, args.colorList)
     draw_subcortical_volume_list(subcortical_dfs, fsNames, args.colorList)
 
     # tksurferCapture.main(args.fsDir, join(args.fsDir,
@@ -140,19 +145,69 @@ def reorder_df(df, colName, orderList):
     return newDf
 
 def draw_subcortical_volume_list(infoDfList, nameList, colorList):
-    # graph order from left
-    fig, axes = plt.subplots(nrows=2, figsize=(22,12), facecolor='white')
+    # Extract data with left and right
+    # mean infoDf
+    meanDf = infoDfList[-1]
+    # remove regions
+    regions_to_remove = ['BrainSegVol', 'BrainSegVolNotVent', 
+                         'BrainSegVolNotVentSurf', 'MaskVol',
+                         'SupraTentorialVol', 'SupraTentorialVolNotVent',
+                         'SupraTentorialVolNotVentVox',
+                        'SubCortGrayVol', 'Brain-Stem', 
+                        'Left-Cerebellum-Cortex',
+                        'Right-Cerebellum-Cortex',
+                        'Left-Cerebellum-White-Matter',
+                        'Right-Cerebellum-White-Matter',
+                        'BrainSegVol-to-eTIV',
+                        'MaskVol-to-eTIV',
+                        '5th-Ventricle',
+                        'Optic-Chiasm',
+                        'SurfaceHoles', 'lhSurfaceHoles', 'rhSurfaceHoles',
+                        'WM-hypointensities',
+                        'non-WM-hypointensities',
+                        'Right-non-WM-hypointensities',
+                        'Left-non-WM-hypointensities',
+                        'Right-WM-hypointensities',
+                        'Left-WM-hypointensities',
+                        'Right-vessel', 'Left-vessel']
+
+    meanDf = meanDf[(~meanDf.roi.isin(regions_to_remove))]
+    rois_with_side = meanDf.roi[meanDf.roi.str.contains('(Left|Right)')]
+    meanDf_withside = meanDf[meanDf.roi.isin(rois_with_side)]
+    meanDf_withoutside = meanDf[~meanDf.roi.isin(rois_with_side)]
+
+    # kmeans
+    # volume divisions
+    graphNum = 4
+    subcortical_volumes_mean = np.array(meanDf_withoutside.volume).reshape(-1,1)
+    kmeans = KMeans(n_clusters=graphNum, 
+                    random_state=0).fit(subcortical_volumes_mean)
+    meanDf_withoutside['gtype'] = kmeans.labels_
+
+    # Graphs
+    fig = plt.figure(figsize=(22,12), facecolor='white')
     fig.suptitle("Sub-cortical Volume Summary", fontsize=20)
+    # axes
+    # Upper axes : Data with side information
+    gs = gridspec.GridSpec(3,4)
+    left_ax = plt.subplot(gs[0,:])
+    right_ax = plt.subplot(gs[1,:])
+    axes_side = [left_ax, right_ax]
+    # Lower axes : Data without side information
+    # K-means clustered
+    ax1 = plt.subplot(gs[2,0])
+    ax2 = plt.subplot(gs[2,1])
+    ax3 = plt.subplot(gs[2,2])
+    ax4 = plt.subplot(gs[2,3])
+    axes = [ax1, ax2, ax3, ax4]
 
     # color definition
     color=iter(cm.rainbow(np.linspace(0,1,len(infoDfList))))
 
-    # mean infoDf
-    meanDf = infoDfList[-1]
-    roiList = meanDf.roi.unique()
-
     sig_diff_region = []
+    # For every subject information dataframes
     for infoDfNum, (infoDf, subjName) in enumerate(zip(infoDfList, nameList)):
+        # Setting graph colours
         if colorList:
             # if meanDf is on, colorList is one shorter.
             try:
@@ -162,17 +217,95 @@ def draw_subcortical_volume_list(infoDfList, nameList, colorList):
         else:
             c = next(color)
 
-        #infodf = reorder_df(infodf, 'region', roiOrder)
-        
-        large_rois = ['EstimatedTotalIntraCranialVol', 'TotalGrayVol', 'CortexVol', 'CorticalWhiteMatterVol', 'lhCortexVol', 'rhCortexVol', 'lhCorticalWhiteMatterVol', 'rhCorticalWhiteMatterVol', 'Left-Cerebellum-Cortex', 'Left-Cerebellum-White-Matter', 'Right-Cerebellum-Cortex', 'Right-Cerebellum-White-Matter', 'Brain-Stem']
+        # Divide infoDf into
+        # df_with_side_info
+        # df_without_side_info
+        df = infoDf[(~infoDf.roi.isin(regions_to_remove))]
+        df_side = df[(df.roi.isin(rois_with_side))]
+        df_side['side'] = df_side.roi.str.extract('(Left|Right)', expand=False)
+        df_side['merged_roi'] = df.roi.str.extract('\w{4,5}-(\S*)', expand=False)
 
-        small_rois = ['CSF', '3rd-Ventricle', '4th-Ventricle', '5th-Ventricle', 'CC_Anterior', 'CC_Central', 'CC_Mid_Anterior', 'CC_Mid_Posterior', 'CC_Posterior', 'Left-Accumbens-area', 'Left-Amygdala', 'Left-Caudate', 'Left-Hippocampus', 'Left- Inf-Lat-Vent', 'Left-Lateral-Ventricle', 'Left-Pallidum', 'Left-Putamen', 'Left-Thalamus-Proper', 'Right-Accumbens-    area', 'Right-Amygdala', 'Right-Caudate', 'Right-Hippocampus', 'Right-Inf-Lat-Vent', 'Right-Lateral-Ventricle', 'Right-Pallidum', 'Right-Putamen', 'Right-Thalamus-Proper']
+        for sideNum, side in enumerate(['Left', 'Right']):
+            side_df = df_side.groupby('side').get_group(side)
+            side_df = side_df.sort_values('merged_roi')
+            ax = axes_side[sideNum]
+            if subjName == 'CCNC_mean':
+                #ax.plot(infodf.thickavg, '--', c=c, label=subjName)
+                eb = ax.errorbar(range(len(side_df.merged_roi.unique())),
+                                  side_df.volume,
+                                  side_df.volumestd*2,
+                                  marker='^',
+                                  label=subjName, 
+                                  color='b',
+                                  ecolor='b',
+                                  alpha=0.7)
+                plotline, caplines, barlinecols = eb
+                barlinecols[0].set_linestyle('--')
+                plotline.set_linestyle('--')
+            else:
+                ax.plot(range(len(side_df.merged_roi)), 
+                        side_df.volume, c=c, label=subjName)
 
-        for graphNum, roi_sets in enumerate([large_rois, small_rois]):
-            ax = axes[graphNum]
-            df = infoDf.loc[(infoDf.roi.isin(roi_sets))]
-            df = df.set_index('roi').reindex(roi_sets).reset_index()
-            print df
+                ### annotation
+                mergedDf = pd.merge(meanDf_withside,
+                                    side_df,
+                                    on='roi',
+                                    how='right')
+                mergedDf['mean_sub_indv'] = mergedDf.volume_x - mergedDf.volume_y
+
+                # Reorder Dfs
+                mergedDf = mergedDf.sort_values('roi')
+                #mergedDf = reorder_df(mergedDf, 'region', roiOrder)
+
+                #for sigNum, row in enumerate(mergedDf[abs(mergedDf['mean_sub_indv']) > 0.5].iterrows()):
+                # greater than two standard deviation
+                arrowSize = np.mean(side_df.volume.std())
+                for sigNum, row in enumerate(mergedDf[abs(mergedDf['mean_sub_indv']) > mergedDf['volumestd']*2].iterrows()):
+                    if (sigNum+1) % 2 == 0:
+                        sign = 1
+                        diff = arrowSize/2
+                    else:
+                        sign = -1
+                        diff = 0
+
+                    if row[1].mean_sub_indv < 0:
+                        col = 'green'
+                        sign = 1
+                    else:
+                        col = 'red'
+
+                    textLoc_y = row[1].volume_y + (sign * arrowSize) + diff
+
+                    if row[1].roi not in sig_diff_region:
+                        ax.annotate(row[1].roi,
+                                    xy = (row[0], row[1].volume_y), 
+                                    xycoords='data',
+                                    xytext = (row[0], textLoc_y),
+                                    textcoords='data',
+                                    arrowprops = dict(facecolor=col, 
+                                                      shrinkB=5,
+                                                      alpha=0.5), 
+                                    horizontalalignment='center', 
+                                    fontsize=15)
+                        sig_diff_region.append(row[1].roi)
+            ax.grid(False)
+            ax.set_xlim(-.5, len(side_df.merged_roi)+0.5)
+            ax.set_xticks(range(len(side_df.merged_roi)))
+            ax.set_xticklabels(side_df.merged_roi)
+            ax.patch.set_facecolor('white')
+            ax.autoscale(enable=True, axis='x', tight=True)
+
+        # Bottom three graphs
+        for axNum, ax in enumerate(axes):
+            # List of rois in subgroups
+            roi_order = meanDf_withoutside[(meanDf_withoutside.gtype==axNum)].roi
+
+            # Subgroup roi df
+            df = infoDf[(infoDf.roi.isin(roi_order))]
+            df = df.sort_values('roi')
+            #df = df.set_index('roi').reindex(roi_order).reset_index() # sort
+            #df['gtype'] = axNum
+
             if subjName=='CCNC_mean':
                 #ax.plot(infodf.thickavg, '--', c=c, label=subjName)
                 eb = ax.errorbar(range(len(df.roi.unique())),
@@ -187,10 +320,15 @@ def draw_subcortical_volume_list(infoDfList, nameList, colorList):
                 barlinecols[0].set_linestyle('--')
                 plotline.set_linestyle('--')
             else:
-                ax.plot(df.volume, c=c, label=subjName)
+                ax.plot(range(len(roi_order)), 
+                        df.volume, 
+                        c=c, 
+                        marker='o',
+                        label=subjName)
 
                 ### annotation
-                meanDf_set = meanDf.loc[(meanDf.roi.isin(roi_sets))]
+                meanDf_set = meanDf.loc[(meanDf.roi.isin(roi_order))]
+                print df
                 mergedDf = pd.merge(meanDf_set,
                                     df,
                                     on=['roi','region'],
@@ -203,10 +341,11 @@ def draw_subcortical_volume_list(infoDfList, nameList, colorList):
 
                 #for sigNum, row in enumerate(mergedDf[abs(mergedDf['mean_sub_indv']) > 0.5].iterrows()):
                 # greater than two standard deviation
+                arrowSize = np.mean(df.volume.std())
                 for sigNum, row in enumerate(mergedDf[abs(mergedDf['mean_sub_indv']) > mergedDf['volumestd']*2].iterrows()):
                     if (sigNum+1) % 2 == 0:
                         sign = 1
-                        diff = 2500
+                        diff = arrowSize/2
                     else:
                         sign = -1
                         diff = 0
@@ -217,7 +356,7 @@ def draw_subcortical_volume_list(infoDfList, nameList, colorList):
                     else:
                         col = 'red'
 
-                    textLoc_y = row[1].volume_y + (sign * 5000) + diff
+                    textLoc_y = row[1].volume_y + (sign * arrowSize) + diff
 
                     if row[1].roi not in sig_diff_region:
                         ax.annotate(row[1].roi,
@@ -232,26 +371,31 @@ def draw_subcortical_volume_list(infoDfList, nameList, colorList):
                                     fontsize=15)
                         sig_diff_region.append(row[1].roi)
 
-        # axis settings
-            #ax = axes[snum]
-        ax.patch.set_facecolor('white')
-        # Graph settings
-        #ax.set_ylim(-5000, 35000)
-        ax.set_xlabel('Subcortical ROI', fontsize=16)
-        ax.set_xticks(range(len(roiList)))
-        ax.set_xticklabels(['' for x in roiList])
-        ax.set_xlim(-.5, 32.5)
-        ax.grid(False)
+                # axis settings
+                    #ax = axes[snum]
+                ax.patch.set_facecolor('white')
+                # Graph settings
+                #ax.set_ylim(-5000, 35000)
+                #ax.set_xlabel('Subcortical ROI', fontsize=16)
+                ax.set_xticks(range(len(roi_order)))
+                #ax.set_xticklabels(['' for x in roiList])
+                ax.set_xlim(-.5, len(df.roi)+0.5) 
+                ax.grid(False)
+                ax.autoscale(enable=True, axis='x', tight=True)
 
-        ax.legend()
-        legend = ax.legend(frameon = 1)
-        frame = legend.get_frame()
-        frame.set_facecolor('white')
+                ax.set_xticklabels(df.roi)
+                labels = ax.get_xticklabels()
+                if len(roi_order) > 3:
+                    plt.setp(labels, rotation=30)
+                plt.tight_layout(pad=7, w_pad=3, h_pad=0.2)
 
-        ax.set_xticklabels(infoDf.roi)
-    labels = ax.get_xticklabels()
-    plt.setp(labels, rotation=30)
-    plt.tight_layout(pad=7, w_pad=3, h_pad=0.2)
+
+    ax2.set_xticklabels(['Total Intra-cranial Volume'], rotation=0)
+    ax2.set_ylim(1000000, 2200000)
+    left_ax.legend()
+    legend = left_ax.legend(frameon = 1)
+    frame = legend.get_frame()
+    frame.set_facecolor('white')
 
     #fig.show()
     fname = 'subcortical_volume_summary.png'
