@@ -147,7 +147,18 @@ def reorder_df(df, colName, orderList):
     return newDf
 
 def draw_subcortical_volume_list(infoDfList, nameList, colorList):
-    # Extract data with left and right
+    '''
+    Draw graph that summarizes subcortical volumes from 
+    freesurfer outputs.
+
+    The last items in the given input lists are that of meandf.
+
+    1. Separate out data that has side information.
+    2. Divide the rest of volumes in
+       to four graphs according to the volumes
+    '''
+    number_of_graphs = 4
+
     # mean infoDf
     meanDf = infoDfList[-1]
     # remove regions
@@ -155,23 +166,24 @@ def draw_subcortical_volume_list(infoDfList, nameList, colorList):
                          'BrainSegVolNotVentSurf', 'MaskVol',
                          'SupraTentorialVol', 'SupraTentorialVolNotVent',
                          'SupraTentorialVolNotVentVox',
-                        'SubCortGrayVol', 'Brain-Stem', 
-                        'Left-Cerebellum-Cortex',
-                        'Right-Cerebellum-Cortex',
-                        'Left-Cerebellum-White-Matter',
-                        'Right-Cerebellum-White-Matter',
-                        'BrainSegVol-to-eTIV',
-                        'MaskVol-to-eTIV',
-                        '5th-Ventricle',
-                        'Optic-Chiasm',
-                        'SurfaceHoles', 'lhSurfaceHoles', 'rhSurfaceHoles',
-                        'WM-hypointensities',
-                        'non-WM-hypointensities',
-                        'Right-non-WM-hypointensities',
-                        'Left-non-WM-hypointensities',
-                        'Right-WM-hypointensities',
-                        'Left-WM-hypointensities',
-                        'Right-vessel', 'Left-vessel']
+                         'SubCortGrayVol', 'Brain-Stem', 
+                         'Left-Cerebellum-Cortex',
+                         'Right-Cerebellum-Cortex',
+                         'Left-Cerebellum-White-Matter',
+                         'Right-Cerebellum-White-Matter',
+                         'BrainSegVol-to-eTIV',
+                         'MaskVol-to-eTIV',
+                         '5th-Ventricle',
+                         'Optic-Chiasm',
+                         'SurfaceHoles', 
+                         'lhSurfaceHoles', 'rhSurfaceHoles',
+                         'WM-hypointensities',
+                         'non-WM-hypointensities',
+                         'Right-non-WM-hypointensities',
+                         'Left-non-WM-hypointensities',
+                         'Right-WM-hypointensities',
+                         'Left-WM-hypointensities',
+                         'Right-vessel', 'Left-vessel']
 
     meanDf = meanDf[(~meanDf.roi.isin(regions_to_remove))]
     rois_with_side = meanDf.roi[meanDf.roi.str.contains('(Left|Right)')]
@@ -179,9 +191,11 @@ def draw_subcortical_volume_list(infoDfList, nameList, colorList):
     meanDf_withoutside = meanDf[~meanDf.roi.isin(rois_with_side)]
 
     # kmeans
-    # volume divisions
+    # volume range divisions
     graphNum = 4
+    # data to divide
     subcortical_volumes_mean = np.array(meanDf_withoutside.volume).reshape(-1,1)
+    # settin up and training the kmeans model
     kmeans = KMeans(n_clusters=graphNum, 
                     random_state=0).fit(subcortical_volumes_mean)
     # chage here later
@@ -192,6 +206,7 @@ def draw_subcortical_volume_list(infoDfList, nameList, colorList):
     # Graphs
     fig = plt.figure(figsize=(22,12), facecolor='white')
     fig.suptitle("Sub-cortical Volume Summary", fontsize=20)
+
     # axes
     # Upper axes : Data with side information
     gs = gridspec.GridSpec(3,4)
@@ -222,14 +237,13 @@ def draw_subcortical_volume_list(infoDfList, nameList, colorList):
         else:
             c = next(color)
 
-        # Divide infoDf into
-        # df_with_side_info
-        # df_without_side_info
+        # For subcortical main structures, 
+        # divided left and right
         df = infoDf[(~infoDf.roi.isin(regions_to_remove))]
         df_side = df[(df.roi.isin(rois_with_side))]
-
         df_side.loc[:, 'side'] = df_side.roi.str.extract('(Left|Right)', expand=False)
         df_side.loc[:, 'merged_roi'] = df.roi.str.extract('\w{4,5}-(\S*)', expand=False)
+        df_without_side = df[~(df.roi.isin(rois_with_side))]
 
         for sideNum, side in enumerate(['Left', 'Right']):
             side_df = df_side.groupby('side').get_group(side)
@@ -250,7 +264,10 @@ def draw_subcortical_volume_list(infoDfList, nameList, colorList):
                 plotline.set_linestyle('--')
             else:
                 ax.plot(range(len(side_df.merged_roi)), 
-                        side_df.volume, c=c, label=subjName)
+                        side_df.volume, 
+                        c=c, 
+                        marker='o',
+                        label=subjName)
 
                 ### annotation
                 mergedDf = pd.merge(meanDf_withside,
@@ -313,7 +330,6 @@ def draw_subcortical_volume_list(infoDfList, nameList, colorList):
             #df['gtype'] = axNum
 
             if subjName=='CCNC_mean':
-                #ax.plot(infodf.thickavg, '--', c=c, label=subjName)
                 eb = ax.errorbar(range(len(df.roi.unique())),
                                   df.volume,
                                   df.volumestd*2,
