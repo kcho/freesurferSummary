@@ -122,8 +122,8 @@ def freesurferSummary(args):
         fsNames.append('CCNC_mean')
 
     # Make line plots of cortical thickness for each hemisphere
-    #draw_thickness_list(cortical_dfs, fsNames, args.colorList)
-    #draw_volume_list(cortical_dfs, fsNames, args.colorList)
+    draw_thickness_list(cortical_dfs, fsNames, args.colorList)
+    draw_volume_list(cortical_dfs, fsNames, args.colorList)
     draw_subcortical_volume_list(subcortical_dfs, fsNames, args.colorList)
 
     # tksurferCapture.main(args.fsDir, join(args.fsDir,
