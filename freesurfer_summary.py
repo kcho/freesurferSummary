@@ -299,7 +299,7 @@ def draw_subcortical_volume_list(infoDfList, nameList, colorList):
             ax.set_xticks(range(len(side_df.merged_roi)))
             ax.set_xticklabels(side_df.merged_roi)
             ax.patch.set_facecolor('white')
-            ax.autoscale(enable=True, axis='x', tight=True)
+            ax.autoscale(enable=True, axis='x')
 
         # Bottom three graphs
         for axNum, ax in enumerate(axes):
