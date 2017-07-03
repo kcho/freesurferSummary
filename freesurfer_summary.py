@@ -20,6 +20,8 @@ from sklearn.cluster import KMeans
 import warnings
 warnings.filterwarnings("ignore", 'This pattern has match groups')
 #import tksurferCapture
+pd.options.mode.chained_assignment = None  # default='warn'
+
 
 __author__ = 'kcho'
 plt.style.use('ggplot')
@@ -182,6 +184,9 @@ def draw_subcortical_volume_list(infoDfList, nameList, colorList):
     subcortical_volumes_mean = np.array(meanDf_withoutside.volume).reshape(-1,1)
     kmeans = KMeans(n_clusters=graphNum, 
                     random_state=0).fit(subcortical_volumes_mean)
+    # chage here later
+    # gives error without
+    # pd.options.mode.chained_assignment = None  # default='warn'
     meanDf_withoutside['gtype'] = kmeans.labels_
 
     # Graphs
@@ -222,8 +227,9 @@ def draw_subcortical_volume_list(infoDfList, nameList, colorList):
         # df_without_side_info
         df = infoDf[(~infoDf.roi.isin(regions_to_remove))]
         df_side = df[(df.roi.isin(rois_with_side))]
-        df_side['side'] = df_side.roi.str.extract('(Left|Right)', expand=False)
-        df_side['merged_roi'] = df.roi.str.extract('\w{4,5}-(\S*)', expand=False)
+
+        df_side.loc[:, 'side'] = df_side.roi.str.extract('(Left|Right)', expand=False)
+        df_side.loc[:, 'merged_roi'] = df.roi.str.extract('\w{4,5}-(\S*)', expand=False)
 
         for sideNum, side in enumerate(['Left', 'Right']):
             side_df = df_side.groupby('side').get_group(side)
@@ -328,7 +334,6 @@ def draw_subcortical_volume_list(infoDfList, nameList, colorList):
 
                 ### annotation
                 meanDf_set = meanDf.loc[(meanDf.roi.isin(roi_order))]
-                print df
                 mergedDf = pd.merge(meanDf_set,
                                     df,
                                     on=['roi','region'],
