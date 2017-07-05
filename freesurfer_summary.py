@@ -74,7 +74,7 @@ def getGroupMeanInfo(meanDfLoc):
     df_name = 'CCNC_mean'
     return meanDf, df_name
 
-def makeMean(args):
+def makeMean(inputDirs):
     cortical_dfs = pd.DataFrame()
     subcortical_dfs = pd.DataFrame()
     pbar = ProgressBar().start()
@@ -85,18 +85,18 @@ def makeMean(args):
     nor_df = mri_excel.parse('NOR')
     nor_df = nor_df[(nor_df.timeline=='baseline')][['folderName','age','sex']]
 
-    for fsDirNum, argsFsDir in enumerate(args.inputDirs):
-        pbar.update((fsDirNum/len(args.inputDirs)) * 100)
+    for fsDirNum, fsDir in enumerate(inputDirs):
+        pbar.update((fsDirNum/len(inputDirs)) * 100)
         # aparcstats2table
-        cortical_df = aparcstats2table(os.path.abspath(argsFsDir), 'aparc')
-        cortical_df['subject'] = basename(argsFsDir)
+        cortical_df = aparcstats2table(os.path.abspath(fsDir), 'aparc')
+        cortical_df['subject'] = basename(fsDir)
         cortical_dfs = pd.concat([cortical_dfs, cortical_df])
 
         # asegstats2table
         # df.columns = ['roi', 'volume', 'region']
         # regions are subocortex
-        subcortical_df =  asegstats2table(os.path.abspath(argsFsDir))
-        subcortical_df['subject'] = basename(argsFsDir)
+        subcortical_df =  asegstats2table(os.path.abspath(fsDir))
+        subcortical_df['subject'] = basename(fsDir)
         subcortical_dfs = pd.concat([subcortical_dfs, subcortical_df])
     pbar.finish()
 
@@ -1106,7 +1106,7 @@ if __name__ == '__main__':
 
     # Make mean
     if args.makeMean:
-        makeMean(args)
+        makeMean(args.inputDirs)
     else:
         freesurferSummary(args.inputDirs,
                          args.nameList,
