@@ -139,6 +139,7 @@ def freesurferSummary(args):
     subcortical_dfs = []
     fsNames = []
 
+    print args.inputDirs, args.ageList, args.genderList
     for fsDirNum, (argsFsDir, age, gender) in enumerate(zip(args.inputDirs,
                                             args.ageList,
                                             args.genderList)):
@@ -318,7 +319,7 @@ def draw_subcortical_volume_list(infoDfList, nameList, colorList):
             side_df = df_side.groupby('side').get_group(side)
             side_df = side_df.sort_values('merged_roi')
             ax = axes_side[sideNum]
-            if subjName == 'CCNC_mean':
+            if 'CCNC_mean' in subjName:
                 #ax.plot(infodf.thickavg, '--', c=c, label=subjName)
                 eb = ax.errorbar(range(len(side_df.merged_roi.unique())),
                                   side_df.volume,
@@ -398,7 +399,7 @@ def draw_subcortical_volume_list(infoDfList, nameList, colorList):
             #df = df.set_index('roi').reindex(roi_order).reset_index() # sort
             #df['gtype'] = axNum
 
-            if subjName=='CCNC_mean':
+            if 'CCNC_mean' in subjName:
                 eb = ax.errorbar(range(len(df.roi.unique())),
                                   df.volume,
                                   df.volumestd*2,
@@ -527,7 +528,7 @@ def draw_volume_list(infoDfList, nameList, colorList):
             infodf = reorder_df(infodf, 'region', roiOrder)
 
             ax = axes[snum]
-            if subjName=='CCNC_mean':
+            if 'CCNC_mean' in subjName:
                 #ax.plot(infodf.thickavg, '--', c=c, label=subjName)
                 eb = ax.errorbar(range(len(roiList)),
                                   infodf.volume,
@@ -671,7 +672,7 @@ def draw_thickness_list(infoDfList, nameList, colorList):
             infodf = reorder_df(infodf, 'region', roiOrder)
 
             ax = axes[snum]
-            if subjName=='CCNC_mean':
+            if 'CCNC_mean' in subjName:
                 #ax.plot(infodf.thickavg, '--', c=c, label=subjName)
                 eb = ax.errorbar(range(len(roiList)),
                                   infodf.thickness,
