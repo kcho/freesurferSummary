@@ -158,18 +158,21 @@ def freesurferSummary(args):
 
     if args.nobackground==False:
         # Read CCNC healthy control information
-        #meanDfLoc = '/ccnc_bin/meanThickness/ccnc_hc_information_2017_06_28.csv'
-        mean_cortical_df_loc = '/Volume/CCNC_BI_3T/freesurfer/NOR/all_cortical_dfs_2017_07_04.csv'
-        mean_subcortical_df_loc = '/Volume/CCNC_BI_3T/freesurfer/NOR/all_subcortical_dfs_2017_07_04.csv'
+        for age, gender in zip(args.ageList, args.genderList):
+            # csv with all subjects' data
+            mean_cortical_df_loc = '/Volume/CCNC_BI_3T/freesurfer/NOR/all_cortical_dfs_2017_07_04.csv'
+            mean_subcortical_df_loc = '/Volume/CCNC_BI_3T/freesurfer/NOR/all_subcortical_dfs_2017_07_04.csv'
 
-        # Yoobin function added here
-        mean_cortical_df = demo_match(args.age, args.age_range, args.sex, mean_cortical_df_loc)
-        mean_cortical_df = demo_match(args.age, args.age_range, args.sex, mean_subcortical_df_loc)
+            # Yoobin function added here
+            mean_cortical_df = demo_match(age, args.age_range, sex, 
+                                          mean_cortical_df_loc)
+            mean_cortical_df = demo_match(age, args.age_range, sex, 
+                                          mean_subcortical_df_loc)
 
-        # Add CCNC HCs informat
-        cortical_dfs.append(mean_cortical_df)
-        subcortical_dfs.append(mean_subcortical_df)
-        fsNames.append('CCNC_mean')
+            # Add CCNC HCs informat
+            cortical_dfs.append(mean_cortical_df)
+            subcortical_dfs.append(mean_subcortical_df)
+            fsNames.append('CCNC_mean {age} ±{ageRange} {gender}'.format(age=age, ageRange=args.ageRange, gender))
 
     # Make line plots of cortical thickness for each hemisphere
     draw_thickness_list(cortical_dfs, fsNames, args.colorList)
