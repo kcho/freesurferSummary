@@ -26,18 +26,15 @@ pd.options.mode.chained_assignment = None  # default='warn'
 __author__ = 'kcho'
 plt.style.use('ggplot')
 
-
 def demo_match(age, age_range, sex, all_data_Loc):
     '''
-    all_data_df : output from makeMean
-    all_data_Loc : 
     by yb
     '''
-    matching = pd.read_csv(all_data_Loc)
+    matching = pd.read_csv(all_dataLoc)
 
-    upper = int(age) + age_range
-    lower = int(age) - age_range
-    
+    upper = age + age_range
+    lower = age - age_range
+
     matching_age = matching[(matching['age'] >= lower) & (matching['age'] <= upper)]
     matching_sex = matching_age[matching_age['sex'] == sex]
 
@@ -45,11 +42,18 @@ def demo_match(age, age_range, sex, all_data_Loc):
     if 'thickness' in matching.columns:
         matched = matching_sex[['side', 'roi', 'region', 'thickness','thicknessstd', 'volume', 'subject']]
         matched_mean = matched.groupby(['roi','side','region']).mean().reset_index()
+        matched_std = matched.groupby(['roi','side','region']).std().reset_index()
+        matched_std = matched_std.rename(columns={'thickness': 'thickness_std', 'thicknessstd': 'per_region_std', 'volume': 'vol_std'})
+        matched_mean_std = pd.merge(matched_mean, matched_std, how='inner')
+
     elif 'thickness' not in matching.columns:
         matched = matching_sex[['roi', 'volume', 'region', 'subject']]
         matched_mean = matched.groupby(['roi', 'region']).mean().reset_index()
-
-    return matched_mean
+        matched_std = matched.groupby(['roi','region']).std().reset_index()
+        matched_std = matched_std.rename(columns={'volume': 'vol_std'})
+        matched_mean_std = pd.merge(matched_mean, matched_std, how='inner')
+    
+    return matched_mean_std
 
 def getGroupMeanInfo(meanDfLoc):
     '''
