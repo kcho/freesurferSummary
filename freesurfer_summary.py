@@ -26,6 +26,37 @@ pd.options.mode.chained_assignment = None  # default='warn'
 __author__ = 'kcho'
 plt.style.use('ggplot')
 
+
+def demo_match(age, age_range, sex, all_data):      # all_data = cortical info df, subcortical info df
+    '''
+    by yb
+    '''
+
+    matching = pd.read_csv(all_data)
+
+    upper = age + age_range
+    lower = age - age_range
+    
+    matching_age = matching[(matching['age'] >= lower) & (matching['age'] <= upper)]
+    #b = df[(df['a'] > 1) & (df['a'] < 5)]                                  
+    matching_sex = matching_age[matching_age['sex'] == sex]
+
+
+    # see column names
+    columns = list(matching) 
+
+    if 'thickness' in columns:
+        matched = matching_sex[['side', 'roi', 'region', 'thickness','thicknessstd', 'volume', 'subject']]
+        matched_mean = matched.groupby(['roi','side','region']).mean().reset_index()
+
+    if 'thickness' not in columns:
+        matched = matching_sex[['roi', 'volume', 'region', 'subject']]
+        matched_mean = matched.groupby(['roi', 'region']).mean().reset_index()
+
+
+
+        return matched_mean
+
 def getGroupMeanInfo(meanDfLoc):
     '''
     Read cortical thickness of all control subjects
@@ -47,19 +78,42 @@ def makeMean(args):
     cortical_dfs = pd.DataFrame()
     subcortical_dfs = pd.DataFrame()
     pbar = ProgressBar().start()
+
+    # mri spreadsheet
+    mri_excel_loc = '/home/kangik/Dropbox/MRI/MRI.xls'
+    mri_excel = pd.ExcelFile(mri_excel_loc)
+    nor_df = mri_excel.parse('NOR')
+    nor_df = nor_df[(nor_df.timeline=='baseline')][['folderName','age','sex']]
+
     for fsDirNum, argsFsDir in enumerate(args.inputDirs):
         pbar.update((fsDirNum/len(args.inputDirs)) * 100)
         # aparcstats2table
         cortical_df = aparcstats2table(os.path.abspath(argsFsDir), 'aparc')
+        cortical_df['subject'] = basename(argsFsDir)
         cortical_dfs = pd.concat([cortical_dfs, cortical_df])
 
         # asegstats2table
         # df.columns = ['roi', 'volume', 'region']
         # regions are subocortex
         subcortical_df =  asegstats2table(os.path.abspath(argsFsDir))
+        subcortical_df['subject'] = basename(argsFsDir)
         subcortical_dfs = pd.concat([subcortical_dfs, subcortical_df])
     pbar.finish()
 
+    cortical_dfs = pd.merge(cortical_dfs, nor_df,
+                            left_on='subject',
+                            right_on='folderName',
+                            how='left')
+    subcortical_dfs = pd.merge(subcortical_dfs, nor_df,
+                            left_on='subject',
+                            right_on='folderName',
+                            how='left')
+
+    cortical_dfs.to_csv('all_cortical_dfs_{date}.csv'.format(
+        date = time.strftime("%Y_%m_%d")))
+    subcortical_dfs.to_csv('all_subcortical_dfs_{date}.csv'.format(
+        date = time.strftime("%Y_%m_%d")))
+    
     mean_cortical_dfs = cortical_dfs.groupby(['side', 'roi', 'region']).mean()
     mean_subcortical_dfs = subcortical_dfs.groupby(['roi', 'region']).mean()
 
@@ -472,7 +526,7 @@ def draw_volume_list(infoDfList, nameList, colorList):
                 barlinecols[0].set_linestyle('--')
                 plotline.set_linestyle('--')
             else:
-                ax.plot(infodf.volume, c=c, label=subjName)
+                ax.plot(infodf.volume, c=c, marker='o', label=subjName)
 
                 ### annotation
                 mergedDf = pd.merge(meanDf,
@@ -616,7 +670,7 @@ def draw_thickness_list(infoDfList, nameList, colorList):
                 barlinecols[0].set_linestyle('--')
                 plotline.set_linestyle('--')
             else:
-                ax.plot(infodf.thickness, c=c, label=subjName)
+                ax.plot(infodf.thickness, c=c, marker='o', label=subjName)
 
                 ### annotation
                 mergedDf = pd.merge(meanDf,
