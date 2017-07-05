@@ -29,6 +29,8 @@ plt.style.use('ggplot')
 
 def demo_match(age, age_range, sex, all_data_Loc):
     '''
+    all_data_df : output from makeMean
+    all_data_Loc : 
     by yb
     '''
     matching = pd.read_csv(all_dataLoc)
@@ -157,10 +159,12 @@ def freesurferSummary(args):
     if args.nobackground==False:
         # Read CCNC healthy control information
         #meanDfLoc = '/ccnc_bin/meanThickness/ccnc_hc_information_2017_06_28.csv'
-        mean_cortical_df_loc = '/Volume/CCNC_BI_3T/freesurfer/NOR/mean_cortical_dfs_2017_07_02.csv'
-        mean_subcortical_df_loc = '/Volume/CCNC_BI_3T/freesurfer/NOR/mean_subcortical_dfs_2017_07_02.csv'
-        mean_cortical_df = pd.read_csv(mean_cortical_df_loc)
-        mean_subcortical_df = pd.read_csv(mean_subcortical_df_loc)
+        mean_cortical_df_loc = '/Volume/CCNC_BI_3T/freesurfer/NOR/all_cortical_dfs_2017_07_04.csv'
+        mean_subcortical_df_loc = '/Volume/CCNC_BI_3T/freesurfer/NOR/all_subcortical_dfs_2017_07_04.csv'
+
+        # Yoobin function added here
+        mean_cortical_df = demo_match(args.age, args.age_range, args.sex, mean_cortical_df_loc)
+        mean_cortical_df = demo_match(args.age, args.age_range, args.sex, mean_subcortical_df_loc)
 
         # Add CCNC HCs informat
         cortical_dfs.append(mean_cortical_df)
@@ -1032,6 +1036,17 @@ if __name__ == '__main__':
         help='List of legend names for each freesurfer summary',
         nargs='+',
         default=False)
+
+    parser.add_argument(
+        '-a', '--ageList',
+        help='List of age for each freesurfer summary',
+        nargs='+',
+        default=False)
+
+    parser.add_argument(
+        '-ar', '--ageRange',
+        help='List of age for each freesurfer summary',
+        default=3)
 
     parser.add_argument(
         '-g', '--genderList',
