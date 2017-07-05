@@ -149,8 +149,8 @@ def freesurferSummary(inputDirs,
     subcortical_dfs = []
     fsNames = []
 
-    fsInfos = [inputDirs, ageList, genderList]
-    for fsDirNum, (fsDir, age, gender) in enumerate(fsInfos):
+    # Loop through every fs directories
+    for fsDirNum, (fsDir, age, gender) in enumerate(zip(inputDirs, ageList, genderList)):
         if nameList:
             subjNames = '{name} {gender} {age}'.format(
                 name = nameList[fsDirNum],
@@ -161,7 +161,7 @@ def freesurferSummary(inputDirs,
         fsNames.append(subjNames)
 
         # Label approach
-        #fsInfoDf.append(collectStats(os.path.abspath(fsDir)))
+        # fsInfoDf.append(collectStats(os.path.abspath(fsDir)))
 
         # aparcstats2table
         cortical_df = aparcstats2table(os.path.abspath(fsDir), 'aparc')
@@ -1090,7 +1090,6 @@ if __name__ == '__main__':
     parser.add_argument(
         '-s', '--std',
         help='Standard deviation threshold to highlight on the graph',
-        nargs='+',
         default=False)
 
     parser.add_argument(
