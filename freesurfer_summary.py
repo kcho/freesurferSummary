@@ -129,7 +129,7 @@ def makeMean(args):
         date = time.strftime("%Y_%m_%d")))
     #print mean_subcortical_dfs
 
-def freesurferSummary(args):
+def freesurferSummary(inputDirs, nameList=False, ageList=False, genderList=False, ageRange=3, colorList=False, nobackground=False, makeMean=False):
     '''
     Summarizes freesurfer outputs using matplotlib
     - Cortical thickness and volume
@@ -141,45 +141,45 @@ def freesurferSummary(args):
     subcortical_dfs = []
     fsNames = []
 
-    for fsDirNum, (argsFsDir, age, gender) in enumerate(zip(args.inputDirs,
-                                                            args.ageList,
-                                                            args.genderList)):
-        print(argsFsDir)
-        if args.nameList:
-            argsSubjNames = '{name} {gender} {age}'.format(
-                name = args.nameList[fsDirNum],
+    for fsDirNum, (fsDir, age, gender) in enumerate(zip(inputDirs,
+                                                            ageList,
+                                                            genderList)):
+        print(fsDir)
+        if nameList:
+            subjNames = '{name} {gender} {age}'.format(
+                name = nameList[fsDirNum],
                 gender = gender,
                 age = age)
         else:
-            argsSubjNames = raw_input('{0} Subject initial :'.format(argsFsDir))
-        fsNames.append(argsSubjNames)
+            subjNames = raw_input('{0} Subject initial :'.format(fsDir))
+        fsNames.append(subjNames)
 
         # Label approach
-        #fsInfoDf.append(collectStats(os.path.abspath(argsFsDir)))
+        #fsInfoDf.append(collectStats(os.path.abspath(fsDir)))
 
         # aparcstats2table
-        cortical_df = aparcstats2table(os.path.abspath(argsFsDir), 'aparc')
-        cortical_df['subject'] = argsSubjNames
+        cortical_df = aparcstats2table(os.path.abspath(fsDir), 'aparc')
+        cortical_df['subject'] = subjNames
         cortical_dfs.append(cortical_df)
 
         # asegstats2table
         # df.columns = ['roi', 'volume', 'region']
         # regions are subocortex
-        subcortical_df =  asegstats2table(os.path.abspath(argsFsDir))
-        subcortical_df['subject'] =  argsSubjNames
+        subcortical_df =  asegstats2table(os.path.abspath(fsDir))
+        subcortical_df['subject'] =  subjNames
         subcortical_dfs.append(subcortical_df)
 
-    if args.nobackground==False:
+    if nobackground==False: # Mean graph option turned on
         # Read CCNC healthy control information
-        for age, gender in zip(args.ageList, args.genderList):
+        for age, gender in zip(ageList, genderList):
             # csv with all subjects' data
             mean_cortical_df_loc = '/Volume/CCNC_BI_3T/freesurfer/NOR/all_cortical_dfs_2017_07_04.csv'
             mean_subcortical_df_loc = '/Volume/CCNC_BI_3T/freesurfer/NOR/all_subcortical_dfs_2017_07_04.csv'
 
             # Yoobin function added here
-            mean_cortical_df = demo_match(age, args.ageRange, gender, 
+            mean_cortical_df = demo_match(age, ageRange, gender, 
                                           mean_cortical_df_loc)
-            mean_subcortical_df = demo_match(age, args.ageRange, gender, 
+            mean_subcortical_df = demo_match(age, ageRange, gender, 
                                           mean_subcortical_df_loc)
 
             # Add CCNC HCs informat
@@ -188,16 +188,16 @@ def freesurferSummary(args):
 
             # Mean graph name with age and gender information
             mgName = 'CCNC_mean {age} age range: {ageRange} {gender}'.format(age=age, 
-                                                                    ageRange=args.ageRange, 
+                                                                    ageRange=ageRange, 
                                                                     gender=gender)
             fsNames.append(mgName)
 
     # Make line plots of cortical thickness for each hemisphere
-    draw_thickness_list(cortical_dfs, fsNames, args.colorList)
-    draw_volume_list(cortical_dfs, fsNames, args.colorList)
-    draw_subcortical_volume_list(subcortical_dfs, fsNames, args.colorList)
+    draw_thickness_list(cortical_dfs, fsNames, colorList)
+    draw_volume_list(cortical_dfs, fsNames, colorList)
+    draw_subcortical_volume_list(subcortical_dfs, fsNames, colorList)
 
-    # tksurferCapture.main(args.fsDir, join(args.fsDir,
+    # tksurferCapture.main(fsDir, join(fsDir,
                                           # 'tmp',
                                           # 'thick_kev_detailed_new.csv'))
 
@@ -1108,5 +1108,12 @@ if __name__ == '__main__':
     if args.makeMean:
         makeMean(args)
     else:
-        freesurferSummary(args)
+        freesurferSummary(args.inputDirs,
+                         args.nameList,
+                         args.ageList,
+                         args.genderList,
+                         args.ageRange,
+                         args.colorList,
+                         args.nobackground,
+                         args.makeMean)
 
