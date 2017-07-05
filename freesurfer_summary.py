@@ -27,35 +27,27 @@ __author__ = 'kcho'
 plt.style.use('ggplot')
 
 
-def demo_match(age, age_range, sex, all_data):      # all_data = cortical info df, subcortical info df
+def demo_match(age, age_range, sex, all_data_Loc):
     '''
     by yb
     '''
-
-    matching = pd.read_csv(all_data)
+    matching = pd.read_csv(all_dataLoc)
 
     upper = age + age_range
     lower = age - age_range
     
     matching_age = matching[(matching['age'] >= lower) & (matching['age'] <= upper)]
-    #b = df[(df['a'] > 1) & (df['a'] < 5)]                                  
     matching_sex = matching_age[matching_age['sex'] == sex]
 
-
     # see column names
-    columns = list(matching) 
-
-    if 'thickness' in columns:
+    if 'thickness' in matching.columns:
         matched = matching_sex[['side', 'roi', 'region', 'thickness','thicknessstd', 'volume', 'subject']]
         matched_mean = matched.groupby(['roi','side','region']).mean().reset_index()
-
-    if 'thickness' not in columns:
+    elif 'thickness' not in matching.columns:
         matched = matching_sex[['roi', 'volume', 'region', 'subject']]
         matched_mean = matched.groupby(['roi', 'region']).mean().reset_index()
 
-
-
-        return matched_mean
+    return matched_mean
 
 def getGroupMeanInfo(meanDfLoc):
     '''
