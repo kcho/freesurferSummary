@@ -33,10 +33,10 @@ def demo_match(age, age_range, sex, all_data_Loc):
     all_data_Loc : 
     by yb
     '''
-    matching = pd.read_csv(all_dataLoc)
+    matching = pd.read_csv(all_data_Loc)
 
-    upper = age + age_range
-    lower = age - age_range
+    upper = int(age) + age_range
+    lower = int(age) - age_range
     
     matching_age = matching[(matching['age'] >= lower) & (matching['age'] <= upper)]
     matching_sex = matching_age[matching_age['sex'] == sex]
@@ -169,9 +169,9 @@ def freesurferSummary(args):
             mean_subcortical_df_loc = '/Volume/CCNC_BI_3T/freesurfer/NOR/all_subcortical_dfs_2017_07_04.csv'
 
             # Yoobin function added here
-            mean_cortical_df = demo_match(age, args.age_range, sex, 
+            mean_cortical_df = demo_match(age, args.ageRange, gender, 
                                           mean_cortical_df_loc)
-            mean_cortical_df = demo_match(age, args.age_range, sex, 
+            mean_subcortical_df = demo_match(age, args.ageRange, gender, 
                                           mean_subcortical_df_loc)
 
             # Add CCNC HCs informat
@@ -179,9 +179,9 @@ def freesurferSummary(args):
             subcortical_dfs.append(mean_subcortical_df)
 
             # Mean graph name with age and gender information
-            mgName = 'CCNC_mean {age} ±{ageRange} {gender}'.format(age=age, 
+            mgName = 'CCNC_mean {age} age range: {ageRange} {gender}'.format(age=age, 
                                                                     ageRange=args.ageRange, 
-                                                                    gender)
+                                                                    gender=gender)
             fsNames.append(mgName)
 
     # Make line plots of cortical thickness for each hemisphere
