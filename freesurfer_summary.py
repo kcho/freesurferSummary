@@ -133,7 +133,10 @@ def makeMean(inputDirs):
         date = time.strftime("%Y_%m_%d")))
     #print mean_subcortical_dfs
 
-def freesurferSummary(inputDirs, nameList=False, ageList=False, genderList=False, colorList=False, 
+def freesurferSummary(inputDirs, 
+                      nameList=False, 
+                      ageList=False, genderList=False, 
+                      colorList=False, 
                       ageRange=3, nobackground=False):
     '''
     Summarizes freesurfer outputs using matplotlib
