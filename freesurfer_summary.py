@@ -75,6 +75,10 @@ def getGroupMeanInfo(meanDfLoc):
     return meanDf, df_name
 
 def makeMean(inputDirs):
+    '''
+    inputDirs is the freesurfer directories to be merged into 
+    background information
+    '''
     cortical_dfs = pd.DataFrame()
     subcortical_dfs = pd.DataFrame()
     pbar = ProgressBar().start()
@@ -129,7 +133,7 @@ def makeMean(inputDirs):
         date = time.strftime("%Y_%m_%d")))
     #print mean_subcortical_dfs
 
-def freesurferSummary(inputDirs, nameList=False, ageList=False, genderList=False, ageRange=3, colorList=False, nobackground=False, makeMean=False):
+def freesurferSummary(inputDirs, nameList=False, ageList=False, genderList=False, ageRange=3, colorList=False, nobackground=False):
     '''
     Summarizes freesurfer outputs using matplotlib
     - Cortical thickness and volume
@@ -1114,6 +1118,4 @@ if __name__ == '__main__':
                          args.genderList,
                          args.ageRange,
                          args.colorList,
-                         args.nobackground,
-                         args.makeMean)
-
+                         args.nobackground)
