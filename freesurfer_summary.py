@@ -133,10 +133,15 @@ def freesurferSummary(args):
     subcortical_dfs = []
     fsNames = []
 
-    for fsDirNum, argsFsDir in enumerate(args.inputDirs):
+    for fsDirNum, (argsFsDir, age, gender) in enumerate(zip(args.inputDirs,
+                                            args.ageList,
+                                            args.genderList)):
         print(argsFsDir)
         if args.nameList:
-            argsSubjNames = args.nameList[fsDirNum]
+            argsSubjNames = '{name} {gender} {age}'.format(
+                name = args.nameList[fsDirNum],
+                gender = gender,
+                age = age)
         else:
             argsSubjNames = raw_input('{0} Subject initial :'.format(argsFsDir))
         fsNames.append(argsSubjNames)
@@ -172,7 +177,12 @@ def freesurferSummary(args):
             # Add CCNC HCs informat
             cortical_dfs.append(mean_cortical_df)
             subcortical_dfs.append(mean_subcortical_df)
-            fsNames.append('CCNC_mean {age} ±{ageRange} {gender}'.format(age=age, ageRange=args.ageRange, gender))
+
+            # Mean graph name with age and gender information
+            mgName = 'CCNC_mean {age} ±{ageRange} {gender}'.format(age=age, 
+                                                                    ageRange=args.ageRange, 
+                                                                    gender)
+            fsNames.append(mgName)
 
     # Make line plots of cortical thickness for each hemisphere
     draw_thickness_list(cortical_dfs, fsNames, args.colorList)
