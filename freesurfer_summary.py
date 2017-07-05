@@ -30,10 +30,10 @@ def demo_match(age, age_range, sex, all_data_Loc):
     '''
     by yb
     '''
-    matching = pd.read_csv(all_dataLoc)
+    matching = pd.read_csv(all_data_Loc)
 
-    upper = age + age_range
-    lower = age - age_range
+    upper = int(age) + age_range
+    lower = int(age) - age_range
 
     matching_age = matching[(matching['age'] >= lower) & (matching['age'] <= upper)]
     matching_sex = matching_age[matching_age['sex'] == sex]
@@ -44,8 +44,8 @@ def demo_match(age, age_range, sex, all_data_Loc):
         matched_mean = matched.groupby(['roi','side','region']).mean().reset_index()
         matched_std = matched.groupby(['roi','side','region']).std().reset_index()
         matched_std = matched_std.rename(columns={'thickness': 'thickstd', 
-                                                  'thicknessstd': 'per_region_std', '
-                                                  volume': 'volumestd'})
+                                                  'thicknessstd': 'per_region_std',
+                                                  'volume': 'volumestd'})
         matched_mean_std = pd.merge(matched_mean, matched_std, how='inner')
 
     elif 'thickness' not in matching.columns:
