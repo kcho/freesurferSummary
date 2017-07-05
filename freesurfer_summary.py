@@ -131,7 +131,9 @@ def makeMean(args):
 
 def freesurferSummary(args):
     '''
-    Output freesurfer summary
+    Summarizes freesurfer outputs using matplotlib
+    - Cortical thickness and volume
+    - Subcortical volumes & ICV
     '''
 
     # Collect infoDfs and names
@@ -139,10 +141,9 @@ def freesurferSummary(args):
     subcortical_dfs = []
     fsNames = []
 
-    print args.inputDirs, args.ageList, args.genderList
     for fsDirNum, (argsFsDir, age, gender) in enumerate(zip(args.inputDirs,
-                                            args.ageList,
-                                            args.genderList)):
+                                                            args.ageList,
+                                                            args.genderList)):
         print(argsFsDir)
         if args.nameList:
             argsSubjNames = '{name} {gender} {age}'.format(
