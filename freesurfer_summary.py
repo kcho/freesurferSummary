@@ -133,7 +133,8 @@ def makeMean(inputDirs):
         date = time.strftime("%Y_%m_%d")))
     #print mean_subcortical_dfs
 
-def freesurferSummary(inputDirs, nameList=False, ageList=False, genderList=False, ageRange=3, colorList=False, nobackground=False):
+def freesurferSummary(inputDirs, nameList=False, ageList=False, genderList=False, colorList=False, 
+                      ageRange=3, nobackground=False):
     '''
     Summarizes freesurfer outputs using matplotlib
     - Cortical thickness and volume
@@ -1113,9 +1114,9 @@ if __name__ == '__main__':
         makeMean(args.inputDirs)
     else:
         freesurferSummary(args.inputDirs,
-                         args.nameList,
-                         args.ageList,
-                         args.genderList,
-                         args.ageRange,
-                         args.colorList,
-                         args.nobackground)
+                          args.nameList,
+                          args.ageList,
+                          args.genderList,
+                          args.colorList,
+                          args.ageRange,
+                          args.nobackground)
