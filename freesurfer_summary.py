@@ -149,10 +149,8 @@ def freesurferSummary(inputDirs,
     subcortical_dfs = []
     fsNames = []
 
-    for fsDirNum, (fsDir, age, gender) in enumerate(zip(inputDirs,
-                                                            ageList,
-                                                            genderList)):
-        print(fsDir)
+    fsInfos = [inputDirs, ageList, genderList]
+    for fsDirNum, (fsDir, age, gender) in enumerate(fsInfos):
         if nameList:
             subjNames = '{name} {gender} {age}'.format(
                 name = nameList[fsDirNum],
@@ -1086,6 +1084,12 @@ if __name__ == '__main__':
     parser.add_argument(
         '-c', '--colorList',
         help='List of colors for each freesurfer summary',
+        nargs='+',
+        default=False)
+
+    parser.add_argument(
+        '-s', '--std',
+        help='Standard deviation threshold to highlight on the graph',
         nargs='+',
         default=False)
 
