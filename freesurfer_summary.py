@@ -201,7 +201,7 @@ def freesurferSummary(inputDirs,
     # Make line plots of cortical thickness for each hemisphere
     draw_thickness_list(cortical_dfs, fsNames, colorList, nobackground)
     draw_volume_list(cortical_dfs, fsNames, colorList, nobackground)
-    draw_subcortical_volume_list(subcortical_dfs, fsNames, colorList)
+    draw_subcortical_volume_list(subcortical_dfs, fsNames, colorList, nobackground)
 
     # tksurferCapture.main(fsDir, join(fsDir,
                                           # 'tmp',
