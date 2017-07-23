@@ -741,7 +741,7 @@ def draw_thickness_list(infoDfList, nameList, colorList):
         ax = axes[snum]
         ax.patch.set_facecolor('white')
         # Graph settings
-        ax.set_ylim(1, 5)
+        ax.set_ylim(1, 4)
         ax.set_xlabel(side, fontsize=16)
         ax.set_xticks(range(len(roiList)))
         ax.set_xticklabels(['' for x in roiList])
