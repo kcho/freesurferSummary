@@ -426,49 +426,50 @@ def draw_subcortical_volume_list(infoDfList, nameList, colorList, nobackground):
                         marker='o',
                         label=subjName)
 
-                ### annotation
-                meanDf_set = meanDf.loc[(meanDf.roi.isin(roi_order))]
-                mergedDf = pd.merge(meanDf_set,
-                                    df,
-                                    on=['roi','region'],
-                                    how='inner')
-                mergedDf['mean_sub_indv'] = mergedDf.volume_x - mergedDf.volume_y
+                if nobackground==False:
+                    ### annotation
+                    meanDf_set = meanDf.loc[(meanDf.roi.isin(roi_order))]
+                    mergedDf = pd.merge(meanDf_set,
+                                        df,
+                                        on=['roi','region'],
+                                        how='inner')
+                    mergedDf['mean_sub_indv'] = mergedDf.volume_x - mergedDf.volume_y
 
-                # Reorder Dfs
-                mergedDf = mergedDf.sort_values('roi')
-                #mergedDf = reorder_df(mergedDf, 'region', roiOrder)
+                    # Reorder Dfs
+                    mergedDf = mergedDf.sort_values('roi')
+                    #mergedDf = reorder_df(mergedDf, 'region', roiOrder)
 
-                #for sigNum, row in enumerate(mergedDf[abs(mergedDf['mean_sub_indv']) > 0.5].iterrows()):
-                # greater than two standard deviation
-                arrowSize = np.mean(df.volume.std())
-                for sigNum, row in enumerate(mergedDf[abs(mergedDf['mean_sub_indv']) > mergedDf['volumestd']*2].iterrows()):
-                    if (sigNum+1) % 2 == 0:
-                        sign = 1
-                        diff = arrowSize/2
-                    else:
-                        sign = -1
-                        diff = 0
+                    #for sigNum, row in enumerate(mergedDf[abs(mergedDf['mean_sub_indv']) > 0.5].iterrows()):
+                    # greater than two standard deviation
+                    arrowSize = np.mean(df.volume.std())
+                    for sigNum, row in enumerate(mergedDf[abs(mergedDf['mean_sub_indv']) > mergedDf['volumestd']*2].iterrows()):
+                        if (sigNum+1) % 2 == 0:
+                            sign = 1
+                            diff = arrowSize/2
+                        else:
+                            sign = -1
+                            diff = 0
 
-                    if row[1].mean_sub_indv < 0:
-                        col = 'green'
-                        sign = 1
-                    else:
-                        col = 'red'
+                        if row[1].mean_sub_indv < 0:
+                            col = 'green'
+                            sign = 1
+                        else:
+                            col = 'red'
 
-                    textLoc_y = row[1].volume_y + (sign * arrowSize) + diff
+                        textLoc_y = row[1].volume_y + (sign * arrowSize) + diff
 
-                    if row[1].roi not in sig_diff_region:
-                        ax.annotate(row[1].roi,
-                                    xy = (row[0], row[1].volume_y), 
-                                    xycoords='data',
-                                    xytext = (row[0], textLoc_y),
-                                    textcoords='data',
-                                    arrowprops = dict(facecolor=col, 
-                                                      shrinkB=5,
-                                                      alpha=0.5), 
-                                    horizontalalignment='center', 
-                                    fontsize=15)
-                        sig_diff_region.append(row[1].roi)
+                        if row[1].roi not in sig_diff_region:
+                            ax.annotate(row[1].roi,
+                                        xy = (row[0], row[1].volume_y), 
+                                        xycoords='data',
+                                        xytext = (row[0], textLoc_y),
+                                        textcoords='data',
+                                        arrowprops = dict(facecolor=col, 
+                                                          shrinkB=5,
+                                                          alpha=0.5), 
+                                        horizontalalignment='center', 
+                                        fontsize=15)
+                            sig_diff_region.append(row[1].roi)
 
                 # axis settings
                     #ax = axes[snum]
