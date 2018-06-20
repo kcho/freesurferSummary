@@ -26,12 +26,13 @@ pd.options.mode.chained_assignment = None  # default='warn'
 __author__ = 'kcho'
 plt.style.use('ggplot')
 
-class freesurfer_dir:
+class freesurfer:
     def __init__(self, freesurfer_dir):
         self.freesurfer_dir = freesurfer_dir
         os.environ["FREESURFER_HOME"] = '/usr/local/freesurfer'
         os.environ["SUBJECTS_DIR"] = dirname(self.freesurfer_dir)
 
+        collectStats(self.freesurfer_dir)
         self.cortical_df = aparcstats2table(self.freesurfer_dir, 'aparc')
         self.subcortical_df =  asegstats2table(self.freesurfer_dir)
 
@@ -223,7 +224,7 @@ def getRegion(roi):
     eg) regions : 'LPFC', 'OFC', 'MPFC', 'LTC', 'MTC', 'SMC', 'PC' or 'OCC'
     '''
     roiDict = get_cortical_rois()
-    for region, roiList in roiDict.iteritems():
+    for region, roiList in roiDict.items():
         if roi in roiList:
             return region
 
@@ -825,7 +826,7 @@ def getInfoFromLabel(fsDir,roiDict):
     totalNum = 2 * len(roiDict.keys())
     num = 1
     for side in ['lh','rh']:
-        for cortex, rois in roiDict.iteritems():
+        for cortex, rois in roiDict.items():
             if len(rois) > 1:
                 command = 'mris_anatomical_stats \
                 -l {loc}/{side}_{cortex} {name} {side} 2>/dev/null'.format(
@@ -875,7 +876,7 @@ def mergeLabel(fsDir, roiDict):
     '''
 
     for side in ['lh','rh']:
-        for cortex, rois in roiDict.iteritems():
+        for cortex, rois in roiDict.items():
             inLabelLocs = [join(fsDir,'tmp',side+'.'+x+'.label') for x in rois]
             inLabelForms = ' '.join(['-i '+x for x in inLabelLocs])
             outLabel = join(fsDir,'tmp',side+'_'+cortex)
@@ -919,12 +920,14 @@ def asegstats2table(fsDir):
     os.environ["SUBJECTS_DIR"] = dirname(fsDir)
 
     output_text = join(fsDir, 'tmp', 'subcortex_table.txt')
-    command = 'asegstats2table \
+    command = 'python2 {fsbin}/asegstats2table \
             --subjects {dirName} \
-            -t {output_text}'.format(dirName = basename(fsDir),
+            -t {output_text}'.format(fsbin=join(os.environ['FREESURFER_HOME'], 'bin'),
+                                     dirName = basename(fsDir),
                                      output_text = output_text)
 
     if not isfile(output_text):
+        print(command)
         os.popen(command).read()
     df = pd.read_table(output_text).T.reset_index()
     df = df.drop(0)
@@ -944,19 +947,23 @@ def aparcstats2table(fsDir, parc):
     for side in 'lh', 'rh':
         for measure in measures:
             output_text = join(fsDir, 'tmp', '{0}_{1}_table.txt'.format(side, measure))
-            command = 'aparcstats2table \
+            command = 'python2 {fsbin}/aparcstats2table \
                     --hemi {side} \
                     --subjects {dirName} \
                     --parc {parc} \
                     --meas {measure} \
-                    -t {output_text}'.format(side = side,
+                    -t {output_text}'.format(fsbin=join(os.environ['FREESURFER_HOME'], 'bin'),
+                                             side = side,
                                              dirName = basename(fsDir),
                                              parc = parc,
                                              measure = measure,
                                              output_text = output_text)
 
             if not isfile(output_text):
+                print(output_text)
+                print(command)
                 os.popen(command).read()
+                print('hoho')
 
             df = pd.read_table(output_text).T
             df = df.drop(df.index[0])
@@ -1045,7 +1052,7 @@ def get_cortical_rois_detailed():
            'OCC' : ['pericalcarine', 'lingual', 'lateraloccipital', 'cuneus']}
 
     detailed = []
-    for key, roi_list in roiDict.iteritems():
+    for key, roi_list in roiDict.items():
         detailed = detailed + roi_list
 
     detailed_ROIs = {}
