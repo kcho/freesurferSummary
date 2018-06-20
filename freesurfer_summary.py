@@ -26,6 +26,7 @@ pd.options.mode.chained_assignment = None  # default='warn'
 __author__ = 'kcho'
 plt.style.use('ggplot')
 
+
 class freesurfer:
     def __init__(self, freesurfer_dir):
         self.freesurfer_dir = freesurfer_dir
@@ -36,6 +37,90 @@ class freesurfer:
         self.cortical_df = aparcstats2table(self.freesurfer_dir, 'aparc')
         self.subcortical_df =  asegstats2table(self.freesurfer_dir)
 
+        #self.cortex_subreg_dict = get_cortical_rois()
+        #self.cortex_subreg_dict = get_cortical_rois_detailed
+
+class plot_freesurfer(freesurfer):
+    def __init__(self):
+        freesurfer.__init__()
+        fig, axes = plt.subplots(nrows=2,
+                                 figsize=(22,12),
+                                 facecolor='white')
+        fig.suptitle("Cortical thickness in all regions",
+                     fontsize=20)
+
+        for num, side in enumerate(['lh', 'rh']):
+            ax = axes[snum]
+            
+            ax.patch.set_facecolor('white')
+            # Graph settings
+            ax.set_ylim(1, 4)
+            ax.set_xlabel(side, fontsize=16)
+            ax.set_xticks(range(len(roiList)))
+            ax.set_xticklabels(['' for x in roiList])
+            ax.set_xlim(-.5, 32.5)
+            ax.grid(False)
+
+            ax.legend()
+            legend = ax.legend(frameon = 1)
+            frame = legend.get_frame()
+            frame.set_facecolor('white')
+
+            ## Background fill (group discrimination)
+            #roiOrder_full = [[x]*len(roiDict[x]) for x in roiOrder]
+            #roiOrder_one_list = list(itertools.chain.from_iterable(roiOrder_full))
+
+            #roiOrder_array = np.array(roiOrder_one_list)
+
+            #regionToHighlight = roiOrder[1::2]
+            #xCoords = [np.where(roiOrder_array==x)[0] for x in regionToHighlight]
+
+            #for x in xCoords:
+                #ax.axvspan(x[0], x[-1], alpha=0.5)
+
+            #startNum = 0
+            #for region in roiOrder:
+                #x_starting_point = startNum
+                #startNum = startNum + len(roiDict[region])
+
+                #ax.text((x_starting_point-.5 + startNum-.5)/2, 1.2,
+                        #region,
+                        #horizontalalignment='center',
+                        #alpha=.4,
+                        #fontsize=15)
+
+            #ax.set_xticklabels(infodf.roi)
+            #labels = ax.get_xticklabels()
+            #plt.setp(labels, rotation=30)
+            #plt.tight_layout(pad=7, w_pad=3, h_pad=0.2)
+
+        fig.show()
+
+
+class fs_eight_cortex:
+    def __init__(self):
+        ofc = ['parsorbitalis', 'medialorbitofrontal', 
+               'lateralorbitofrontal']
+        mpfc = ['caudalanteriorcingulate',
+                'rostralanteriorcingulate', 'superiorfrontal']
+        lpfc = [ 'parstriangularis', 'rostralmiddlefrontal',
+                'frontalpole', 'parsopercularis']
+        smc = [ 'precentral', 'caudalmiddlefrontal',
+               'postcentral', 'paracentral']
+        pc = ['inferiorparietal', 'supramarginal',
+              'precuneus', 'posteriorcingulate',
+              'isthmuscingulate', 'superiorparietal']
+        mtc = ['entorhinal', 'parahippocampal', 'fusiform']
+        ltc = ['transversetemporal', 'superiortemporal',
+               'bankssts', 'inferiortemporal',
+               'middletemporal', 'temporalpole']
+        occ = ['pericalcarine', 'lingual', 
+               'lateraloccipital', 'cuneus']
+        tmp_dict = {'OFC' : ofc, 'MPFC' : mpfc, 
+                    'LPFC' : lpfc, 'SMC' : smc, 
+                    'MTC' : mtc, 'LTC' : ltc, 
+                    'PC' : pc, 'OCC' : occ}
+        self.eight_cortex_dict = tmp_dict
 
 def demo_match(age, age_range, sex, all_data_Loc):
     '''
