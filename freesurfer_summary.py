@@ -26,6 +26,16 @@ pd.options.mode.chained_assignment = None  # default='warn'
 __author__ = 'kcho'
 plt.style.use('ggplot')
 
+class freesurfer_dir:
+    def __init__(self, freesurfer_dir):
+        self.freesurfer_dir = freesurfer_dir
+        os.environ["FREESURFER_HOME"] = '/usr/local/freesurfer'
+        os.environ["SUBJECTS_DIR"] = dirname(self.freesurfer_dir)
+
+        self.cortical_df = aparcstats2table(self.freesurfer_dir, 'aparc')
+        self.subcortical_df =  asegstats2table(self.freesurfer_dir)
+
+
 def demo_match(age, age_range, sex, all_data_Loc):
     '''
     by yb
