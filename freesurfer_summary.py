@@ -41,8 +41,8 @@ class freesurfer:
         #self.cortex_subreg_dict = get_cortical_rois_detailed
 
 class plot_freesurfer(freesurfer):
-    def __init__(self):
-        freesurfer.__init__()
+    def __init__(self, freesurfer_dir):
+        freesurfer.__init__(freesurfer_dir)
         fig, axes = plt.subplots(nrows=2,
                                  figsize=(22,12),
                                  facecolor='white')
