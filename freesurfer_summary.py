@@ -1146,6 +1146,238 @@ def get_cortical_rois_detailed():
 
     return detailed_ROIs
 
+
+class VolumeFigure(ThicknessFigure):
+    def __init__(self, all_df):
+        super().__init__(all_df)
+        self.figure_title = "Cortical volume in all regions"
+        #self.all_df_side_gb = all_df.groupby('side')
+
+    def draw_sns(self, groups):
+        self.groups = groups
+        roiDict = get_cortical_rois()
+        self.total_order = []
+        for region in self.roiOrder:
+            rois = roiDict[region]
+            for roi in rois:
+                self.total_order.append(roi)
+
+        self.g = sns.catplot(x='roi', y='volume', 
+                             order=self.total_order,
+                             hue='group', hue_order=self.groups,
+                             row='side', data=self.all_df, aspect=5, kind='violin', legend=False)
+        #self.ylim = (0,7000)
+        self.g.fig.suptitle(self.figure_title, size=20)
+        self.edit_sns_graphs()
+
+class FreesurferFigure:
+    def __init__(self, all_df):
+        self.roiOrder = ['LPFC', 'OFC', 'MPFC', 'LTC', 'MTC', 'SMC', 'PC', 'OCC']
+
+        roiDict = get_cortical_rois()
+        self.roi_list = []
+        for region in self.roiOrder:
+            rois = roiDict[region]
+            for roi in rois:
+                self.roi_list.append(roi)
+        super().__init__()
+
+        #meanDf = infoDfList[-1]
+        self.color=cm.rainbow(np.linspace(0,1,len(all_df.group.unique())))
+
+        self.all_df = all_df
+        self.subject_count = all_df[['group', 'subject']].drop_duplicates().groupby('group').count().to_dict()['subject']
+
+    def draw_volume_sns_side_mean(self, groups):
+        self.figure_title = "Cortical volume in all regions"
+
+        self.groups = groups
+        self.g = sns.catplot(x='roi', y='volume', 
+                             order=self.roi_list,
+                             hue='group', hue_order=self.groups,
+                             data=self.all_df, aspect=3, height=8, kind='violin', legend=False)
+        #plt.subplots_adjust(top=0.9)
+        self.g.fig.suptitle(self.figure_title, size=20)
+        #self.ylim = (1,5)
+        self.ylabel = 'Volume'
+        self.xlabel = 'ROIs'
+        self.edit_sns_graphs()
+
+    def draw_volume_sns(self, groups):
+        self.figure_title = "Cortical volume in all regions"
+        self.groups = groups
+        self.g = sns.catplot(x='roi', y='volume', 
+                             order=self.roi_list,
+                             hue='group', hue_order=self.groups,
+                             row='side', data=self.all_df, aspect=5, kind='violin', legend=False)
+        #plt.subplots_adjust(top=0.9)
+        self.g.fig.suptitle(self.figure_title, size=20)
+        #self.ylim = (1,5)
+        self.ylabel = 'Volume'
+        self.xlabel = 'ROIs'
+        self.edit_sns_graphs()
+
+    def draw_thickness_sns(self, groups):
+        self.figure_title = "Cortical thickness in all regions"
+        self.groups = groups
+        self.g = sns.catplot(x='roi', y='thickness', 
+                             order=self.roi_list,
+                             hue='group', hue_order=self.groups,
+                             row='side', data=self.all_df, aspect=5, kind='violin', legend=False)
+        #plt.subplots_adjust(top=0.9)
+        self.g.fig.suptitle(self.figure_title, size=20)
+        self.ylim = (1,5)
+        self.ylabel = 'Thickness'
+        self.xlabel = 'ROIs'
+        self.edit_sns_graphs()
+
+    def draw_thickness_sns_side_mean(self, groups):
+        self.figure_title = "Cortical thickness in all regions"
+        self.groups = groups
+        self.g = sns.catplot(x='roi', y='thickness', 
+                             order=self.roi_list,
+                             hue='group', hue_order=self.groups,
+                             row='side', data=self.all_df, aspect=5, kind='violin', legend=False)
+        #plt.subplots_adjust(top=0.9)
+        self.g.fig.suptitle(self.figure_title, size=20)
+        self.ylim = (1,5)
+        self.ylabel = 'Thickness'
+        self.xlabel = 'ROIs'
+        self.edit_sns_graphs()
+
+    def edit_sns_graphs(self):
+        for i, ax in enumerate(self.g.fig.axes):
+            ax.set_xticklabels(self.roi_list, rotation=30)
+            ax.patch.set_facecolor('white')
+            # Graph settings
+            if hasattr(self, 'ylim'):
+                ax.set_ylim(self.ylim[0], self.ylim[1])
+            #ax.set_title(side, fontsize=16)
+            #ax.set_xticks(range(len(self.roiList)))
+            if i==1:
+                ax.set_xlabel(self.xlabel)
+            ax.set_ylabel(self.ylabel)
+
+            ax.set_xlim(-.5, 32.5)
+            ax.grid(False)
+
+            ax.legend()
+            legend = ax.legend(frameon = 1)
+            frame = legend.get_frame()
+            # Add subject number to the legend
+            for legend_text, group in zip(legend.get_texts(), self.groups):
+                subject_number_in_the_group = len(self.all_df[self.all_df.group.isin([group])][['subject']].drop_duplicates())
+                legend_text.set_text('{} {}'.format(group, subject_number_in_the_group))
+            frame.set_facecolor('white')
+
+            # Background fill (group discrimination)
+            roiDict = get_cortical_rois()
+            roiOrder_full = [[x]*len(roiDict[x]) for x in self.roiOrder]
+            roiOrder_one_list = list(itertools.chain.from_iterable(roiOrder_full))
+
+            roiOrder_array = np.array(roiOrder_one_list)
+
+            regionToHighlight = self.roiOrder[1::2]
+            xCoords = [np.where(roiOrder_array==x)[0] for x in regionToHighlight]
+
+            for x in xCoords:
+                ax.axvspan(x[0]-0.5, x[-1]+0.5, alpha=0.2, color='gray')
+
+            startNum = 0
+            for region in self.roiOrder:
+                x_starting_point = startNum
+                startNum = startNum + len(roiDict[region])
+
+                ax.text((x_starting_point-.5 + startNum-.5)/2, 1.2,
+                        region,
+                        horizontalalignment='center',
+                        alpha=.4,
+                        fontsize=15)
+
+            #ax.set_xticklabels(total_order)
+            #labels = ax.get_xticklabels()
+            #plt.setp(labels, rotation=30)
+            plt.tight_layout(pad=7, w_pad=3, h_pad=0.2)
+
+    def draw(self):
+        self.fig, self.axes = plt.subplots(nrows=2, figsize=(22,12), facecolor='white')
+        self.fig.suptitle("Cortical thickness in all regions", fontsize=20)
+
+        for side_num, side in enumerate(['lh', 'rh']):
+            all_df_side_gb = self.all_df.groupby('side')
+            all_df_side = all_df_side_gb.get_group(side)
+            group_average_df = all_df_side.groupby(['side', 'roi', 'region', 'group']).agg(['mean', 'std']).reset_index()
+
+
+            # Reorder Dfs
+            group_average_df = reorder_df(group_average_df, 'region', self.roiOrder)
+
+            ax = self.axes[side_num]
+            for group_num, group in enumerate(group_average_df.group.unique()):
+                c = self.color[group_num]
+                group_average_df_for_group = group_average_df.groupby('group').get_group(group)
+
+                eb = ax.errorbar(range(len(group_average_df_for_group)),
+                                 group_average_df_for_group.thickness['mean'].values,
+                                 group_average_df_for_group.thickness['std'].values,
+                                 marker='^',
+                                 label='{} {}'.format(group, self.subject_count[group]),
+                                 color=c,
+                                 ecolor=c,
+                                 alpha=0.7)
+                plotline, caplines, barlinecols = eb
+                barlinecols[0].set_linestyle('--')
+                #plotline.set_linestyle('--')
+
+                #ax.plot(group_average_df_for_group.thickness.values, 
+                        #c=c, 
+                        #marker='o', label='{} {}'.format(group, self.subject_count[group]))
+                #ax.plot(infodf.thickness, c=c, marker='o', label=subjName)
+
+            ax.patch.set_facecolor('white')
+            # Graph settings
+            ax.set_ylim(1, 4.5)
+            ax.set_xlabel(side, fontsize=16)
+            ax.set_xticks(range(len(self.roiList)))
+            ax.set_xticklabels(['' for x in self.roiList])
+            ax.set_xlim(-.5, 32.5)
+            ax.grid(False)
+
+            ax.legend()
+            legend = ax.legend(frameon = 1)
+            frame = legend.get_frame()
+            frame.set_facecolor('white')
+
+            # Background fill (group discrimination)
+            roiDict = get_cortical_rois()
+            roiOrder_full = [[x]*len(roiDict[x]) for x in self.roiOrder]
+            roiOrder_one_list = list(itertools.chain.from_iterable(roiOrder_full))
+
+            roiOrder_array = np.array(roiOrder_one_list)
+
+            regionToHighlight = self.roiOrder[1::2]
+            xCoords = [np.where(roiOrder_array==x)[0] for x in regionToHighlight]
+
+            for x in xCoords:
+                ax.axvspan(x[0], x[-1], alpha=0.5)
+
+            startNum = 0
+            for region in self.roiOrder:
+                x_starting_point = startNum
+                startNum = startNum + len(roiDict[region])
+
+                ax.text((x_starting_point-.5 + startNum-.5)/2, 1.2,
+                        region,
+                        horizontalalignment='center',
+                        alpha=.4,
+                        fontsize=15)
+
+            ax.set_xticklabels(group_average_df.roi)
+            labels = ax.get_xticklabels()
+            plt.setp(labels, rotation=30)
+            plt.tight_layout(pad=7, w_pad=3, h_pad=0.2)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
