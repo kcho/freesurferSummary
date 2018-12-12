@@ -1012,7 +1012,7 @@ def asegstats2table(fsDir):
                                      output_text = output_text)
 
     if not isfile(output_text):
-        print(command)
+        #print(command)
         os.popen(command).read()
     df = pd.read_table(output_text).T.reset_index()
     df = df.drop(0)
@@ -1045,10 +1045,10 @@ def aparcstats2table(fsDir, parc):
                                              output_text = output_text)
 
             if not isfile(output_text):
-                print(output_text)
-                print(command)
+                #print(output_text)
+                #print(command)
                 os.popen(command).read()
-                print('hoho')
+                #print('hoho')
 
             df = pd.read_table(output_text).T
             df = df.drop(df.index[0])
