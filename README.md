@@ -18,3 +18,18 @@
 ### To do
 - freesurferDir search : os.walk add
 
+
+
+## Figure
+
+```py
+f = FreesurferFigureVolume(cortex_df, ['NOR', 'FEP']).linegraph()
+f = FreesurferFigureVolume(cortex_df, ['NOR', 'FEP']).linegraph_side_mean()
+f = FreesurferFigureVolume(cortex_df, ['NOR', 'FEP']).catplot()
+f = FreesurferFigureVolume(cortex_df, ['NOR', 'FEP']).catplot_side_mean()
+
+f = FreesurferFigureThickness(cortex_df, ['NOR', 'FEP']).linegraph()
+f = FreesurferFigureThickness(cortex_df, ['NOR', 'FEP']).linegraph_side_mean()
+f = FreesurferFigureThickness(cortex_df, ['NOR', 'FEP']).catplot()
+f = FreesurferFigureThickness(cortex_df, ['NOR', 'FEP']).catplot_side_mean()
+```

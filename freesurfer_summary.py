@@ -1184,6 +1184,10 @@ class FreesurferFigure:
         self.groups = all_df.group.unique()
         self.xlabel = 'ROIs'
 
+        # lineplot line style
+        self.barline_linestyle = '--'
+        self.plotline_linestyle = '--'
+
     def catplot_side_mean(self):
         self.g = sns.catplot(x='roi', y=self.modality,
                              order=self.roi_list,
@@ -1203,62 +1207,80 @@ class FreesurferFigure:
         self.edit_sns_graphs()
 
     def linegraph(self):
+        # select df for groups selected
         self.all_df = self.all_df[self.all_df.group.isin(self.groups)]
+
         self.fig, self.axes = plt.subplots(nrows=2, figsize=(22,12), facecolor='white')
-        for side_num, side in enumerate(['lh', 'rh']):
-            all_df_side_gb = self.all_df.groupby('side')
-            all_df_side = all_df_side_gb.get_group(side)
-            group_average_df = all_df_side.groupby(['side', 'roi', 'region', 'group']).agg(['mean', 'std']).reset_index()
+        for side_num, side in enumerate(self.all_df.side.unique()):
+            all_df_side = self.all_df.groupby('side').get_group(side)
+            group_average_df = all_df_side.groupby(['roi', 'region', 'group']).agg(['mean', 'std']).reset_index()
 
             ## Reorder Dfs
-            #group_average_df = reorder_df(group_average_df, 'region', self.roiOrder)
             group_average_df = reorder_df(group_average_df, 'roi', self.roi_list)
 
             ax = self.axes[side_num]
             for group_num, group in enumerate(group_average_df.group.unique()):
                 c = self.color[group_num]
-                group_average_df_for_group = group_average_df.groupby('group').get_group(group)
+                df_tmp = group_average_df.groupby('group').get_group(group)
 
-                eb = ax.errorbar(range(len(group_average_df_for_group)),
-                                 group_average_df_for_group[self.modality]['mean'].values,
-                                 group_average_df_for_group[self.modality]['std'].values,
+                eb = ax.errorbar(range(len(df_tmp)),
+                                 df_tmp[self.modality]['mean'].values,
+                                 df_tmp[self.modality]['std'].values,
                                  marker='^',
                                  label='{} {}'.format(group, self.subject_count[group]),
                                  color=c,
                                  ecolor=c,
                                  alpha=0.7)
+
                 plotline, caplines, barlinecols = eb
-                barlinecols[0].set_linestyle('--')
+                barlinecols[0].set_linestyle(self.barline_linestyle)
+                plotline.set_linestyle(self.plotline_linestyle)
         self.edit_sns_graphs()
+
+        
+    def linegraph(self):
+        # select df for groups selected
+        self.all_df = self.all_df[self.all_df.group.isin(self.groups)]
+
+        self.fig, self.axes = plt.subplots(nrows=2, figsize=(22,12), facecolor='white')
+        self.linegraph_draw()
 
     def linegraph_side_mean(self):
+        # select df for groups selected
         self.all_df = self.all_df[self.all_df.group.isin(self.groups)]
-        self.fig, self.ax = plt.subplots(nrows=1, figsize=(22,6), facecolor='white')
+        self.all_df = self.all_df.groupby(['roi', 'region', 'subject', 'group']).mean().reset_index()
+        self.all_df['side'] = 'Average'
 
-        group_average_df = self.all_df.groupby(['roi', 'region', 'group']).agg(['mean', 'std']).reset_index()
+        self.fig, self.axes = plt.subplots(nrows=1, figsize=(22,6), facecolor='white')
+        self.axes = [self.axes]
+        self.linegraph_draw()
 
-        ## Reorder Dfs
-        #group_average_df = reorder_df(group_average_df, 'region', self.roiOrder)
-        group_average_df = reorder_df(group_average_df, 'roi', self.roi_list)
+    def linegraph_draw(self):
+        for side_num, side in enumerate(self.all_df.side.unique()):
+            all_df_side = self.all_df.groupby('side').get_group(side)
+            group_average_df = all_df_side.groupby(['roi', 'region', 'group']).agg(['mean', 'std']).reset_index()
 
-        for group_num, group in enumerate(group_average_df.group.unique()):
-            c = self.color[group_num]
-            group_average_df_for_group = group_average_df.groupby('group').get_group(group)
+            ## Reorder Dfs
+            group_average_df = reorder_df(group_average_df, 'roi', self.roi_list)
 
-            eb = self.ax.errorbar(range(len(group_average_df_for_group)),
-                             group_average_df_for_group[self.modality]['mean'].values,
-                             group_average_df_for_group[self.modality]['std'].values,
-                             marker='^',
-                             label='{} {}'.format(group, self.subject_count[group]),
-                             color=c,
-                             ecolor=c,
-                             alpha=0.7)
-            plotline, caplines, barlinecols = eb
-            barlinecols[0].set_linestyle('--')
+            ax = self.axes[side_num]
+            for group_num, group in enumerate(group_average_df.group.unique()):
+                c = self.color[group_num]
+                df_tmp = group_average_df.groupby('group').get_group(group)
 
-        self.axes = [self.ax]
+                eb = ax.errorbar(range(len(df_tmp)),
+                                 df_tmp[self.modality]['mean'].values,
+                                 df_tmp[self.modality]['std'].values,
+                                 marker='^',
+                                 label='{} {}'.format(group, self.subject_count[group]),
+                                 color=c,
+                                 ecolor=c,
+                                 alpha=0.7)
+
+                plotline, caplines, barlinecols = eb
+                barlinecols[0].set_linestyle(self.barline_linestyle)
+                plotline.set_linestyle(self.plotline_linestyle)
         self.edit_sns_graphs()
-        
 
     def edit_sns_graphs(self):
         self.fig.suptitle(self.figure_title, size=20)
