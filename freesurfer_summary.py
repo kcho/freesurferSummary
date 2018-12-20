@@ -43,16 +43,16 @@ class FreesurferDirectories:
             subcortical_df_tmp['group'] = f.group
             self.subcortex_df = pd.concat([self.subcortex_df, subcortical_df_tmp])
 
-        self.cortex_df_subj_row = pd.pivot_table(self.cortex_df, 
-                                            values=['thickness', 'volume'], 
-                                            index=['subject', 'group'], 
-                                            columns=['roi', 'side'])
-        self.subcortex_df_subj_row = pd.pivot_table(self.subcortex_df, 
-                                                    values=['volume'], 
-                                                    index=['subject', 'group'], 
-                                                    columns=['roi'])
-        self.final_df = pd.merge(self.cortex_df_subj_row, 
-                                 self.subcortex_df_subj_row, on=['subject', 'group'], how='inner')
+        # self.cortex_df_subj_row = pd.pivot_table(self.cortex_df, 
+                                            # values=['thickness', 'volume'], 
+                                            # index=['subject', 'group'], 
+                                            # columns=['roi', 'side'])
+        # self.subcortex_df_subj_row = pd.pivot_table(self.subcortex_df, 
+                                                    # values=['volume'], 
+                                                    # index=['subject', 'group'], 
+                                                    # columns=['roi'])
+        # self.final_df = pd.merge(self.cortex_df_subj_row, 
+                                 # self.subcortex_df_subj_row, on=['subject', 'group'], how='inner')
 
 class Freesurfer:
     def __init__(self, freesurfer_dir):
@@ -75,62 +75,10 @@ class Freesurfer:
             self.subject = basename(freesurfer_dir)
             self.group = self.subject[:3]
 
-class plot_freesurfer(Freesurfer):
-    def __init__(self, freesurfer_dir):
-        freesurfer.__init__(freesurfer_dir)
-        fig, axes = plt.subplots(nrows=2,
-                                 figsize=(22,12),
-                                 facecolor='white')
-        fig.suptitle("Cortical thickness in all regions",
-                     fontsize=20)
-
-        for num, side in enumerate(['lh', 'rh']):
-            ax = axes[snum]
-            
-            ax.patch.set_facecolor('white')
-            # Graph settings
-            ax.set_ylim(1, 4)
-            ax.set_xlabel(side, fontsize=16)
-            ax.set_xticks(range(len(roiList)))
-            ax.set_xticklabels(['' for x in roiList])
-            ax.set_xlim(-.5, 32.5)
-            ax.grid(False)
-
-            ax.legend()
-            legend = ax.legend(frameon = 1)
-            frame = legend.get_frame()
-            frame.set_facecolor('white')
-
-            ## Background fill (group discrimination)
-            #roiOrder_full = [[x]*len(roiDict[x]) for x in roiOrder]
-            #roiOrder_one_list = list(itertools.chain.from_iterable(roiOrder_full))
-
-            #roiOrder_array = np.array(roiOrder_one_list)
-
-            #regionToHighlight = roiOrder[1::2]
-            #xCoords = [np.where(roiOrder_array==x)[0] for x in regionToHighlight]
-
-            #for x in xCoords:
-                #ax.axvspan(x[0], x[-1], alpha=0.5)
-
-            #startNum = 0
-            #for region in roiOrder:
-                #x_starting_point = startNum
-                #startNum = startNum + len(roiDict[region])
-
-                #ax.text((x_starting_point-.5 + startNum-.5)/2, 1.2,
-                        #region,
-                        #horizontalalignment='center',
-                        #alpha=.4,
-                        #fontsize=15)
-
-            #ax.set_xticklabels(infodf.roi)
-            #labels = ax.get_xticklabels()
-            #plt.setp(labels, rotation=30)
-            #plt.tight_layout(pad=7, w_pad=3, h_pad=0.2)
-
-        fig.show()
-
+        # Add group and subject information to the table
+        for df_tmp in self.cortical_df, self.subcortical_df:
+            df_tmp['group'] = self.group
+            df_tmp['subject'] = self.subject
 
 class fs_eight_cortex:
     def __init__(self):
@@ -1182,56 +1130,6 @@ def get_cortical_rois_detailed():
 
     return detailed_ROIs
 
-class FreesurferFigureOverlayThickness(FreesurferFigureVolume):
-    def __init__(self, all_df, groups, overlay_df):
-        super().__init__(all_df, groups)
-        self.overlay_df = overlay_df
-
-    def linegraph_one_subject(self):
-        # select df for groups selected
-        self.all_df = self.all_df[self.all_df.group.isin(self.groups)]
-        self.overlay_df['group'] = self.overlay_df.subject.unique()[0]
-
-        self.all_df = pd.concat([self.all_df, self.overlay_df])
-
-        self.subject_count = self.all_df[['group', 'subject']].drop_duplicates().groupby('group').count().to_dict()['subject']
-        self.fig, self.axes = plt.subplots(nrows=2, figsize=(22,12), facecolor='white')
-        self.linegraph_draw()
-
-class FreesurferFigureOverlayVolume(FreesurferFigureVolume):
-    def __init__(self, all_df, groups, overlay_df):
-        super().__init__(all_df, groups)
-        self.overlay_df = overlay_df
-
-    def linegraph_one_subject(self):
-        # select df for groups selected
-        self.all_df = self.all_df[self.all_df.group.isin(self.groups)]
-        self.overlay_df['group'] = self.overlay_df.subject.unique()[0]
-
-        self.all_df = pd.concat([self.all_df, self.overlay_df])
-
-        self.subject_count = self.all_df[['group', 'subject']].drop_duplicates().groupby('group').count().to_dict()['subject']
-        self.fig, self.axes = plt.subplots(nrows=2, figsize=(22,12), facecolor='white')
-        self.linegraph_draw()
-
-
-class FreesurferFigureVolume(FreesurferFigure):
-    def __init__(self, all_df, groups):
-        super().__init__(all_df)
-        self.modality = 'volume'
-        self.figure_title = "Cortical {} in all regions".format(self.modality)
-        self.ylabel = self.modality.capitalize()
-        self.groups = groups
-
-class FreesurferFigureThickness(FreesurferFigure):
-    def __init__(self, all_df, groups):
-        super().__init__(all_df)
-        self.modality = 'thickness'
-        self.figure_title = "Cortical {} in all regions".format(self.modality)
-        self.ylabel = self.modality.capitalize()
-        self.ylim = (0.5,5)
-        self.groups = groups
-
 class FreesurferFigure:
     def __init__(self, all_df):
         self.roiOrder = ['LPFC', 'OFC', 'MPFC', 'LTC', 'MTC', 'SMC', 'PC', 'OCC']
@@ -1247,7 +1145,13 @@ class FreesurferFigure:
         self.color = cm.rainbow(np.linspace(0,1,len(all_df.group.unique())))
 
         self.all_df = all_df
-        self.subject_count = all_df[['group', 'subject']].drop_duplicates().groupby('group').count().to_dict()['subject']
+        try:
+            self.subject_count = all_df[['group', 'subject']].drop_duplicates().groupby('group').count().to_dict()['subject']
+            # print(self.subject_count)
+
+        except:
+            # print(all_df.head())
+            self.subject_count = {self.all_df.group.unique()[0]:1}
         self.groups = all_df.group.unique()
         self.xlabel = 'ROIs'
 
@@ -1275,6 +1179,8 @@ class FreesurferFigure:
 
     def linegraph(self):
         # select df for groups selected
+        # print(self.all_df)
+        # print(self.all_df.group.ix[0].strip()==self.groups[0])
         self.all_df = self.all_df[self.all_df.group.isin(self.groups)]
 
         self.fig, self.axes = plt.subplots(nrows=2, figsize=(22,12), facecolor='white')
@@ -1336,15 +1242,22 @@ class FreesurferFigure:
             ax.grid(False)
 
             ax.legend()
-            legend = ax.legend(frameon = 1)
-            frame = legend.get_frame()
+            try:
+                legend = ax.legend(frameon = 1)
+                frame = legend.get_frame()
 
-            # Add subject number to the legend
-            for legend_text in legend.get_texts():
-                group=legend_text.get_text()
-                subject_number_in_the_group = self.subject_count[group]
-                legend_text.set_text('{} {}'.format(group, subject_number_in_the_group))
-            frame.set_facecolor('white')
+                # Add subject number to the legend
+                for legend_text in legend.get_texts():
+                    group=legend_text.get_text()
+                    subject_number_in_the_group = self.subject_count[group]
+                    if subject_number_in_the_group == 1:
+                        subject_name = self.all_df[self.all_df.group==group].subject.ix[0]
+                        legend_text.set_text(subject_name)
+                    else:
+                        legend_text.set_text('{} {}'.format(group, subject_number_in_the_group))
+                frame.set_facecolor('white')
+            except:
+                pass
 
             # Background fill (group discrimination)
             roiDict = get_cortical_rois()
@@ -1374,6 +1287,58 @@ class FreesurferFigure:
             #labels = ax.get_xticklabels()
             #plt.setp(labels, rotation=30)
             plt.tight_layout(pad=7, w_pad=3, h_pad=0.2)
+
+class FreesurferFigureVolume(FreesurferFigure):
+    def __init__(self, all_df, groups):
+        super().__init__(all_df)
+        self.modality = 'volume'
+        self.figure_title = "Cortical {} in all regions".format(self.modality)
+        self.ylabel = self.modality.capitalize()
+        self.groups = groups
+
+class FreesurferFigureThickness(FreesurferFigure):
+    def __init__(self, all_df, groups):
+        super().__init__(all_df)
+        self.modality = 'thickness'
+        self.figure_title = "Cortical {} in all regions".format(self.modality)
+        self.ylabel = self.modality.capitalize()
+        self.ylim = (0.5,5)
+        self.groups = groups
+
+class FreesurferFigureOverlayThickness(FreesurferFigureVolume):
+    def __init__(self, all_df, groups, overlay_df):
+        super().__init__(all_df, groups)
+        self.overlay_df = overlay_df
+
+    def linegraph_one_subject(self):
+        # select df for groups selected
+        self.all_df = self.all_df[self.all_df.group.isin(self.groups)]
+        self.overlay_df['group'] = self.overlay_df.subject.unique()[0]
+
+        self.all_df = pd.concat([self.all_df, self.overlay_df])
+
+        self.subject_count = self.all_df[['group', 'subject']].drop_duplicates().groupby('group').count().to_dict()['subject']
+        self.fig, self.axes = plt.subplots(nrows=2, figsize=(22,12), facecolor='white')
+        self.linegraph_draw()
+
+class FreesurferFigureOverlayVolume(FreesurferFigureVolume):
+    def __init__(self, all_df, groups, overlay_df):
+        super().__init__(all_df, groups)
+        self.overlay_df = overlay_df
+
+    def linegraph_one_subject(self):
+        # select df for groups selected
+        self.all_df = self.all_df[self.all_df.group.isin(self.groups)]
+        self.overlay_df['group'] = self.overlay_df.subject.unique()[0]
+
+        self.all_df = pd.concat([self.all_df, self.overlay_df])
+
+        self.subject_count = self.all_df[['group', 'subject']].drop_duplicates().groupby('group').count().to_dict()['subject']
+        self.fig, self.axes = plt.subplots(nrows=2, figsize=(22,12), facecolor='white')
+        self.linegraph_draw()
+
+
+
 
 
 if __name__ == '__main__':
