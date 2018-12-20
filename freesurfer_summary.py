@@ -1130,58 +1130,9 @@ def get_cortical_rois_detailed():
 
     return detailed_ROIs
 
-class FreesurferFigureOverlayThickness(FreesurferFigureVolume):
-    def __init__(self, all_df, groups, overlay_df):
-        super().__init__(all_df, groups)
-        self.overlay_df = overlay_df
-
-    def linegraph_one_subject(self):
-        # select df for groups selected
-        self.all_df = self.all_df[self.all_df.group.isin(self.groups)]
-
-        # If overlay df has single subject
-        if len(self.overlay_df.subject.unique()[0]):
-            self.overlay_df['group'] = self.overlay_df.subject.unique()[0]
-
-        self.all_df = pd.concat([self.all_df, self.overlay_df])
-
-        self.subject_count = self.all_df[['group', 'subject']].drop_duplicates().groupby('group').count().to_dict()['subject']
-        self.fig, self.axes = plt.subplots(nrows=2, figsize=(22,12), facecolor='white')
-        self.linegraph_draw()
-
-class FreesurferFigureOverlayVolume(FreesurferFigureVolume):
-    def __init__(self, all_df, groups, overlay_df):
-        super().__init__(all_df, groups)
-        self.overlay_df = overlay_df
-
-    def linegraph_one_subject(self):
-        # select df for groups selected
-        self.all_df = self.all_df[self.all_df.group.isin(self.groups)]
-        self.overlay_df['group'] = self.overlay_df.subject.unique()[0]
-
-        self.all_df = pd.concat([self.all_df, self.overlay_df])
-
-        self.subject_count = self.all_df[['group', 'subject']].drop_duplicates().groupby('group').count().to_dict()['subject']
-        self.fig, self.axes = plt.subplots(nrows=2, figsize=(22,12), facecolor='white')
-        self.linegraph_draw()
 
 
-class FreesurferFigureVolume(FreesurferFigure):
-    def __init__(self, all_df, groups):
-        super().__init__(all_df)
-        self.modality = 'volume'
-        self.figure_title = "Cortical {} in all regions".format(self.modality)
-        self.ylabel = self.modality.capitalize()
-        self.groups = groups
 
-class FreesurferFigureThickness(FreesurferFigure):
-    def __init__(self, all_df, groups):
-        super().__init__(all_df)
-        self.modality = 'thickness'
-        self.figure_title = "Cortical {} in all regions".format(self.modality)
-        self.ylabel = self.modality.capitalize()
-        self.ylim = (0.5,5)
-        self.groups = groups
 
 class FreesurferFigure:
     def __init__(self, all_df):
@@ -1241,13 +1192,13 @@ class FreesurferFigure:
         # print(self.all_df)
         # print(self.all_df.group.ix[0].strip()==self.groups[0])
         self.all_df = self.all_df[self.all_df.group.isin(self.groups)]
-        self.ylim = (1,4.2)
+        #self.ylim = (1,4.2)
 
         self.fig, self.axes = plt.subplots(nrows=2, figsize=(22,12), facecolor='white')
         self.linegraph_draw()
 
     def linegraph_side_mean(self):
-        self.ylim = (1,4.2)
+        #self.ylim = (1,4.2)
         # select df for groups selected
         self.all_df = self.all_df[self.all_df.group.isin(self.groups)]
         self.all_df = self.all_df.groupby(['roi', 'region', 'subject', 'group']).mean().reset_index()
@@ -1299,10 +1250,9 @@ class FreesurferFigure:
             ax.set_xticks(range(len(self.roi_list)))
             ax.set_xticklabels(self.roi_list, rotation=30)
             ax.patch.set_facecolor('white')
-            # Graph settings
+            #Graph settings
             if hasattr(self, 'ylim'):
                 ax.set_ylim(self.ylim[0], self.ylim[1])
-            #ax.set_title(side, fontsize=16)
             if i==1:
                 ax.set_xlabel(self.xlabel)
             ax.set_ylabel(self.ylabel)
@@ -1363,7 +1313,24 @@ class FreesurferFigureVolume(FreesurferFigure):
         self.modality = 'volume'
         self.figure_title = "Cortical {} in all regions".format(self.modality)
         self.ylabel = self.modality.capitalize()
+        #self.ylim = (0.5,8000)
         self.groups = groups
+
+class FreesurferFigureThickness(FreesurferFigure):
+    def __init__(self, all_df, groups):
+        super().__init__(all_df)
+        self.modality = 'thickness'
+        self.figure_title = "Cortical {} in all regions".format(self.modality)
+        self.ylabel = self.modality.capitalize()
+        self.ylim = (0.5,5)
+        self.groups = groups
+#class FreesurferFigureVolume(FreesurferFigure):
+    #def __init__(self, all_df, groups):
+        #super().__init__(all_df)
+        #self.modality = 'volume'
+        #self.figure_title = "Cortical {} in all regions".format(self.modality)
+        #self.ylabel = self.modality.capitalize()
+        #self.groups = groups
 
 class FreesurferFigureThickness(FreesurferFigure):
     def __init__(self, all_df, groups):
@@ -1407,6 +1374,41 @@ class FreesurferFigureOverlayVolume(FreesurferFigureVolume):
         self.linegraph_draw()
 
 
+class FreesurferFigureOverlayThickness(FreesurferFigureVolume):
+    def __init__(self, all_df, groups, overlay_df):
+        super().__init__(all_df, groups)
+        self.overlay_df = overlay_df
+
+    def linegraph_one_subject(self):
+        # select df for groups selected
+        self.all_df = self.all_df[self.all_df.group.isin(self.groups)]
+
+        # If overlay df has single subject
+        if len(self.overlay_df.subject.unique()[0]):
+            self.overlay_df['group'] = self.overlay_df.subject.unique()[0]
+
+        self.all_df = pd.concat([self.all_df, self.overlay_df])
+
+        self.subject_count = self.all_df[['group', 'subject']].drop_duplicates().groupby('group').count().to_dict()['subject']
+        self.fig, self.axes = plt.subplots(nrows=2, figsize=(22,12), facecolor='white')
+        self.linegraph_draw()
+
+
+class FreesurferFigureOverlayVolume(FreesurferFigureVolume):
+    def __init__(self, all_df, groups, overlay_df):
+        super().__init__(all_df, groups)
+        self.overlay_df = overlay_df
+
+    def linegraph_one_subject(self):
+        # select df for groups selected
+        self.all_df = self.all_df[self.all_df.group.isin(self.groups)]
+        self.overlay_df['group'] = self.overlay_df.subject.unique()[0]
+
+        self.all_df = pd.concat([self.all_df, self.overlay_df])
+
+        self.subject_count = self.all_df[['group', 'subject']].drop_duplicates().groupby('group').count().to_dict()['subject']
+        self.fig, self.axes = plt.subplots(nrows=2, figsize=(22,12), facecolor='white')
+        self.linegraph_draw()
 
 
 
