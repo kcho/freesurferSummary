@@ -1190,7 +1190,10 @@ class FreesurferFigureOverlayThickness(FreesurferFigureVolume):
     def linegraph_one_subject(self):
         # select df for groups selected
         self.all_df = self.all_df[self.all_df.group.isin(self.groups)]
-        self.overlay_df['group'] = self.overlay_df.subject.unique()[0]
+
+        # If overlay df has single subject
+        if len(self.overlay_df.subject.unique()[0]):
+            self.overlay_df['group'] = self.overlay_df.subject.unique()[0]
 
         self.all_df = pd.concat([self.all_df, self.overlay_df])
 
@@ -1245,6 +1248,12 @@ class FreesurferFigure:
 
         #meanDf = infoDfList[-1]
         self.color = cm.rainbow(np.linspace(0,1,len(all_df.group.unique())))
+        self.color_dict = {'NOR':'green',
+                           'FEP':'red',
+                           'CHR':'pink',
+                           'NON':'darkorchid',
+                           'UMO':'darkblue',
+                           'DNO':'cornflowerblue'}
 
         self.all_df = all_df
         self.subject_count = all_df[['group', 'subject']].drop_duplicates().groupby('group').count().to_dict()['subject']
@@ -1253,7 +1262,7 @@ class FreesurferFigure:
 
         # lineplot line style
         self.barline_linestyle = '--'
-        self.plotline_linestyle = '--'
+        self.plotline_linestyle = '-'
 
     def catplot_side_mean(self):
         self.g = sns.catplot(x='roi', y=self.modality,
@@ -1276,11 +1285,13 @@ class FreesurferFigure:
     def linegraph(self):
         # select df for groups selected
         self.all_df = self.all_df[self.all_df.group.isin(self.groups)]
+        self.ylim = (1,4.2)
 
         self.fig, self.axes = plt.subplots(nrows=2, figsize=(22,12), facecolor='white')
         self.linegraph_draw()
 
     def linegraph_side_mean(self):
+        self.ylim = (1,4.2)
         # select df for groups selected
         self.all_df = self.all_df[self.all_df.group.isin(self.groups)]
         self.all_df = self.all_df.groupby(['roi', 'region', 'subject', 'group']).mean().reset_index()
@@ -1299,10 +1310,17 @@ class FreesurferFigure:
             group_average_df = reorder_df(group_average_df, 'roi', self.roi_list)
 
             ax = self.axes[side_num]
+            ax.set_title(side)
             for group_num, group in enumerate(group_average_df.group.unique()):
-                c = self.color[group_num]
-                df_tmp = group_average_df.groupby('group').get_group(group)
+                if [x[-3:] for x in group_average_df.group.unique()] == ['NOR']*len(group_average_df.group.unique()):
+                    c = self.color[group_num]
+                elif group[-3:] in self.color_dict.keys():
+                    c = self.color_dict[group[-3:]]
+                else:
+                    c = self.color[group_num]
 
+                df_tmp = group_average_df.groupby('group').get_group(group)
+        
                 eb = ax.errorbar(range(len(df_tmp)),
                                  df_tmp[self.modality]['mean'].values,
                                  df_tmp[self.modality]['std'].values,
@@ -1311,7 +1329,8 @@ class FreesurferFigure:
                                  label=group,
                                  color=c,
                                  ecolor=c,
-                                 alpha=0.7)
+                                 alpha=0.9)
+                                 #alpha=0.7)
 
                 plotline, caplines, barlinecols = eb
                 barlinecols[0].set_linestyle(self.barline_linestyle)
