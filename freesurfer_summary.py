@@ -26,7 +26,8 @@ pd.options.mode.chained_assignment = None  # default='warn'
 __author__ = 'kcho'
 plt.style.use('ggplot')
 
-class FreesurferDirectories:
+class FreesurferDirectories(object):
+    """Freesurfer directories class"""
     def __init__(self, fs_directories:list):
         self.cortex_df = pd.DataFrame()
         self.subcortex_df = pd.DataFrame()
@@ -54,7 +55,7 @@ class FreesurferDirectories:
         # self.final_df = pd.merge(self.cortex_df_subj_row, 
                                  # self.subcortex_df_subj_row, on=['subject', 'group'], how='inner')
 
-class Freesurfer:
+class Freesurfer(object):
     def __init__(self, freesurfer_dir):
         self.freesurfer_dir = freesurfer_dir
         os.environ["FREESURFER_HOME"] = '/usr/local/freesurfer'
@@ -229,7 +230,12 @@ def freesurferSummary(inputDirs,
     fsNames = []
 
     # Loop through every fs directories
-    for fsDirNum, (fsDir, age, gender) in enumerate(zip(inputDirs, ageList, genderList)):
+    if not ageList:
+        to_iter = enumerate(zip(inputDirs, ['']*len(inputDirs), ['']*len(inputDirs)))
+    else:
+        to_iter = enumerate(zip(inputDirs, ageList, genderList))
+
+    for fsDirNum, (fsDir, age, gender) in to_iter:
         if nameList:
             subjNames = '{name} {gender} {age}'.format(
                 name = nameList[fsDirNum],
@@ -278,9 +284,9 @@ def freesurferSummary(inputDirs,
             fsNames.append(mgName)
 
     # Make line plots of cortical thickness for each hemisphere
-    draw_thickness_list(cortical_dfs, fsNames, colorList, nobackground)
-    draw_volume_list(cortical_dfs, fsNames, colorList, nobackground)
-    draw_subcortical_volume_list(subcortical_dfs, fsNames, colorList, nobackground)
+    # draw_thickness_list(cortical_dfs, fsNames, colorList, nobackground)
+    # draw_volume_list(cortical_dfs, fsNames, colorList, nobackground)
+    # draw_subcortical_volume_list(subcortical_dfs, fsNames, colorList, nobackground)
 
     # tksurferCapture.main(fsDir, join(fsDir,
                                           # 'tmp',
@@ -988,7 +994,7 @@ def asegstats2table(fsDir):
     os.environ["SUBJECTS_DIR"] = dirname(fsDir)
 
     output_text = join(fsDir, 'tmp', 'subcortex_table.txt')
-    command = 'python2 {fsbin}/asegstats2table \
+    command = 'python2 /data/pnl/soft/pnlpipe3/freesurfer/bin/asegstats2table \
             --subjects {dirName} \
             -t {output_text}'.format(fsbin=join(os.environ['FREESURFER_HOME'], 'bin'),
                                      dirName = basename(fsDir),
@@ -1008,7 +1014,8 @@ def asegstats2table(fsDir):
 
 def aparcstats2table(fsDir, parc):
     #os.environ["FREESURFER_HOME"] = '/usr/local/freesurfer'
-    #os.environ["SUBJECTS_DIR"] = dirname(fsDir)
+    os.environ["SUBJECTS_DIR"] = dirname(fsDir)
+    print(dirname(fsDir))
 
     allDf = pd.DataFrame()
     measures = 'volume', 'thickness', 'thicknessstd'
@@ -1016,13 +1023,12 @@ def aparcstats2table(fsDir, parc):
     for side in 'lh', 'rh':
         for measure in measures:
             output_text = join(fsDir, 'tmp', '{0}_{1}_table.txt'.format(side, measure))
-            command = 'python2 {fsbin}/aparcstats2table \
+            command = '/usr/bin/python2 /data/pnl/soft/pnlpipe3/freesurfer/bin/aparcstats2table \
                     --hemi {side} \
                     --subjects {dirName} \
                     --parc {parc} \
                     --meas {measure} \
-                    -t {output_text}'.format(fsbin=join(os.environ['FREESURFER_HOME'], 'bin'),
-                                             side = side,
+                    -t {output_text}'.format(side = side,
                                              dirName = basename(fsDir),
                                              parc = parc,
                                              measure = measure,
