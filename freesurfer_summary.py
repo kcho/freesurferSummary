@@ -1,4 +1,4 @@
-#!/ccnc/anaconda2/bin/python
+#!/usr/bin/env python
 from __future__ import division
 import os
 import re
