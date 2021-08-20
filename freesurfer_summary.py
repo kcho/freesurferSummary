@@ -242,7 +242,7 @@ def freesurferSummary(inputDirs,
                 gender = gender,
                 age = age)
         else:
-            subjNames = raw_input('{0} Subject initial :'.format(fsDir))
+            subjNames = input('{0} Subject initial :'.format(fsDir))
         fsNames.append(subjNames)
 
         # Label approach
